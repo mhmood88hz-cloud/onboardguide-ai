@@ -2,8 +2,8 @@ fastapi0.111.0
 uvicorn0.30.1
 sqlalchemy2.0.30
 psycopg2-binary2.9.9
-pydantic2.7.2
+pydantic[email]==2.7.2
 python-dotenv1.0.1
 multipart==0.2.4
-passlib[bcrypt]1.7.4
+passlib[bcrypt]==1.7.4
 bcrypt4.1.3
