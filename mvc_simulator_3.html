@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>OnboardGuide AI — MVC Workflow Simulator</title>
+<style>
+  :root{
+    --bg-0:#05070d; --bg-1:#0a0e18; --bg-2:#10192b;
+    --line:#1c2740; --line-soft:#141d33;
+    --cyan:#22d3ee; --cyan-dim:#0e7490;
+    --amber:#f59e0b; --red:#f43f5e; --emerald:#34d399;
+    --blue:#60a5fa; --indigo:#818cf8; --purple:#c084fc;
+    --fuchsia:#e879f9; --teal:#2dd4bf;
+    --text-hi:#eef2f9; --text-mid:#8b97b0; --text-low:#4c5773;
+    --font-display:'Space Grotesk','Segoe UI',sans-serif;
+    --font-mono:'JetBrains Mono','Consolas',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:radial-gradient(ellipse 80% 60% at 50% 0%, #0d1730 0%, transparent 60%), var(--bg-0);
+    color:var(--text-hi); font-family:var(--font-display); min-height:100vh;
+  }
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:20px 24px 40px;}
+
+  header{
+    border-bottom:1px solid var(--line-soft); padding-bottom:18px; margin-bottom:22px;
+    display:flex; flex-wrap:wrap; gap:16px; justify-content:space-between; align-items:center;
+  }
+  .title-block{display:flex;flex-direction:column;gap:6px;}
+  .badge-row{display:flex;align-items:center;gap:10px;}
+  .badge{font-size:11px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:999px;background:rgba(34,211,238,.08);color:var(--cyan);border:1px solid rgba(34,211,238,.25);}
+  h1{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0;color:var(--text-hi);}
+  .subtitle{font-size:12.5px;color:var(--text-mid);margin:0;}
+
+  .toolbar{display:flex;align-items:stretch;gap:12px;background:var(--bg-1);border:1px solid var(--line-soft);padding:8px 10px;border-radius:14px;flex-wrap:wrap;}
+  .field{display:flex;flex-direction:column;gap:3px;justify-content:center;}
+  .field label{font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-low);padding-left:2px;}
+  select,input[type=text],textarea{
+    background:var(--bg-0);border:1px solid var(--line);color:var(--cyan);font-weight:600;
+    font-size:12.5px;padding:6px 8px;border-radius:8px;font-family:inherit;
+  }
+  select:focus,input:focus,textarea:focus{ outline:2px solid var(--cyan-dim); outline-offset:1px; }
+  #speed-select{color:var(--text-mid);font-weight:500;font-size:11.5px;}
+  .divider{width:1px;background:var(--line);align-self:stretch;margin:2px 0;}
+  .btn-group{display:flex;gap:6px;align-items:center;}
+
+  button.ctrl{border:none;cursor:pointer;border-radius:9px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--bg-2);color:var(--text-mid);transition:all .15s ease;}
+  button.ctrl:hover{background:#182642;color:var(--text-hi);}
+  button.ctrl:focus-visible{outline:2px solid var(--cyan);outline-offset:2px;}
+  button.ctrl svg{width:17px;height:17px;}
+  #btn-play{background:linear-gradient(160deg,var(--cyan) 0%,var(--cyan-dim) 130%);color:#04121a;}
+  #btn-play:hover{filter:brightness(1.08);}
+
+  button.pill{
+    border:1px solid var(--line); background:var(--bg-2); color:var(--text-mid);
+    font-family:inherit; font-size:11.5px; font-weight:600; padding:7px 12px;
+    border-radius:9px; cursor:pointer; transition:all .15s ease; white-space:nowrap;
+  }
+  button.pill:hover{ background:#182642; color:var(--text-hi); border-color:#2a3958; }
+  button.pill.accent{ background:rgba(34,211,238,.1); color:var(--cyan); border-color:rgba(34,211,238,.35); }
+  button.pill.accent:hover{ background:rgba(34,211,238,.18); }
+  button.pill.danger{ color:var(--red); border-color:rgba(244,63,94,.3); }
+  button.pill.danger:hover{ background:rgba(244,63,94,.1); }
+  button.pill:disabled{ opacity:.35; cursor:not-allowed; }
+
+  main{display:grid;grid-template-columns:3fr 1fr;gap:22px;align-items:start;}
+  @media (max-width:980px){ main{grid-template-columns:1fr;} }
+
+  .canvas-panel{position:relative;background:linear-gradient(180deg,rgba(16,25,43,.5),rgba(10,14,24,.5));border:1px solid var(--line-soft);border-radius:20px;height:560px;overflow-x:auto;overflow-y:hidden;}
+  .grid-overlay{position:absolute;inset:0;background-image:linear-gradient(to right,var(--line-soft) 1px,transparent 1px),linear-gradient(to bottom,var(--line-soft) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 65% 55% at 50% 50%,#000 65%,transparent 100%);mask-image:radial-gradient(ellipse 65% 55% at 50% 50%,#000 65%,transparent 100%);opacity:.55;}
+  #stage{position:relative;min-width:900px;height:100%;}
+  svg#connections-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+  #request-dot{position:absolute;width:16px;height:16px;background:radial-gradient(circle at 35% 30%,#baf6ff,var(--cyan) 60%);border-radius:50%;border:2px solid #eafeff;box-shadow:0 0 6px 2px rgba(34,211,238,.55),0 0 22px 6px rgba(34,211,238,.35);pointer-events:none;opacity:0;z-index:50;transform:translate(-50%,-50%);transition:left .7s cubic-bezier(.65,0,.35,1), top .7s cubic-bezier(.65,0,.35,1), opacity .25s ease;}
+
+  .node{position:absolute;width:150px;background:linear-gradient(155deg,#0d1526 0%,#0a0f1c 100%);border:1.5px solid var(--line);border-radius:12px;padding:11px 12px;text-align:center;box-shadow:0 6px 18px -8px rgba(0,0,0,.6);transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;}
+  .node .eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:.09em;font-weight:700;margin-bottom:6px;opacity:.85;}
+  .node .name{font-family:var(--font-mono);font-size:12.5px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;justify-content:center;gap:5px;}
+  .node .desc{font-size:10px;color:var(--text-mid);line-height:1.35;}
+  .node.active-from{border-color:var(--amber);}
+  .node.active-to{border-color:var(--cyan);transform:scale(1.05);box-shadow:0 0 0 1px rgba(34,211,238,.25),0 10px 26px -10px rgba(34,211,238,.4);}
+
+  .legend{margin-top:16px;background:var(--bg-1);border:1px solid var(--line-soft);border-radius:14px;padding:12px 16px;display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--text-mid);}
+  .legend .dot-key{display:flex;align-items:center;gap:8px;}
+  .legend .swatch{width:9px;height:9px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+  .legend .mvc{display:flex;gap:16px;flex-wrap:wrap;}
+  .legend .mvc span{font-weight:600;}
+
+  .sidebar{display:flex;flex-direction:column;gap:16px;}
+  .card{background:var(--bg-1);border:1px solid var(--line-soft);border-radius:16px;padding:16px;}
+  .card h2{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--text-low);margin:0 0 8px 0;font-weight:700;}
+  #step-number{font-size:34px;font-weight:800;color:var(--cyan);line-height:1;font-family:var(--font-mono);}
+  #step-title{font-size:14px;font-weight:600;color:var(--text-hi);margin-top:6px;}
+
+  .log-card{flex:1;display:flex;flex-direction:column;min-height:340px;}
+  #explanation-container{display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:420px;flex:1;padding-right:2px;}
+  .step-item{padding:10px 11px;border-radius:10px;border:1px solid var(--line-soft);background:rgba(255,255,255,.015);transition:all .25s ease;}
+  .step-item.active{background:linear-gradient(160deg,rgba(34,211,238,.09),rgba(34,211,238,.02));border-color:rgba(34,211,238,.5);box-shadow:0 4px 14px -8px rgba(34,211,238,.4);}
+  .step-item .row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .step-item .step-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-low);}
+  .step-item.active .step-label{color:var(--cyan);}
+  .step-item .arrow{font-family:var(--font-mono);font-size:9px;padding:2px 6px;border-radius:5px;background:var(--bg-2);border:1px solid var(--line);color:var(--text-mid);white-space:nowrap;}
+  .step-item p{margin:6px 0 0 0;font-size:11.5px;line-height:1.5;color:var(--text-mid);}
+  .step-item.active p{color:#d7deed;}
+  .step-item .edit-row{ display:flex; gap:6px; margin-top:8px; }
+
+  footer{text-align:center;font-size:11px;color:var(--text-low);padding-top:26px;}
+
+  /* ---------- Editor panel ---------- */
+  .editor-toggle-wrap{ display:flex; justify-content:flex-end; margin-bottom:14px; }
+
+  #editor-panel{
+    background:var(--bg-1); border:1px solid var(--line-soft); border-radius:16px;
+    padding:18px; margin-bottom:22px; display:none;
+  }
+  #editor-panel.open{ display:block; }
+  #editor-panel h3{ margin:0 0 4px 0; font-size:13px; color:var(--text-hi); }
+  #editor-panel .hint{ font-size:11px; color:var(--text-low); margin:0 0 14px 0; }
+
+  .editor-grid{ display:grid; grid-template-columns: 1.1fr 1.6fr; gap:18px; }
+  @media (max-width:900px){ .editor-grid{ grid-template-columns:1fr; } }
+
+  .scenario-manage{ display:flex; flex-direction:column; gap:10px; }
+  .scenario-list{ display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+  .scenario-row{
+    display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:9px;
+    border:1px solid var(--line-soft); background:var(--bg-2);
+  }
+  .scenario-row.current{ border-color:rgba(34,211,238,.5); background:rgba(34,211,238,.06); }
+  .scenario-row input[type=text]{ flex:1; background:transparent; border:none; color:var(--text-hi); font-weight:600; padding:2px 4px; }
+  .scenario-row input[type=text]:focus{ outline:1px solid var(--cyan-dim); border-radius:5px; }
+  .scenario-row .count{ font-size:10px; color:var(--text-low); font-family:var(--font-mono); white-space:nowrap; }
+
+  .step-form{
+    display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+    background:var(--bg-2); border:1px solid var(--line-soft); border-radius:12px; padding:14px;
+  }
+  .step-form .full{ grid-column: 1 / -1; }
+  .step-form label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-low); display:block; margin-bottom:4px; }
+  .step-form select, .step-form input[type=text], .step-form textarea{ width:100%; color:var(--text-hi); font-weight:500; }
+  .step-form textarea{ resize:vertical; min-height:52px; font-family:inherit; }
+  .step-form .actions{ display:flex; justify-content:flex-end; gap:8px; }
+
+  .editable-steps{ margin-top:14px; display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; }
+  .es-item{ border:1px solid var(--line-soft); border-radius:10px; padding:9px 10px; background:var(--bg-2); }
+  .es-item .row{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .es-item .meta{ font-family:var(--font-mono); font-size:10px; color:var(--text-mid); }
+  .es-item .txt{ font-size:11.5px; color:var(--text-hi); margin-top:4px; font-weight:600; }
+  .es-item .desc-txt{ font-size:11px; color:var(--text-mid); margin-top:3px; }
+  .es-item .btns{ display:flex; gap:5px; flex-shrink:0; }
+  .icon-btn{
+    border:none; background:var(--bg-1); color:var(--text-mid); cursor:pointer;
+    width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; transition:all .15s ease;
+  }
+  .icon-btn:hover{ background:#182642; color:var(--text-hi); }
+  .icon-btn.danger:hover{ color:var(--red); background:rgba(244,63,94,.1); }
+
+  @media (prefers-reduced-motion: reduce){
+    #request-dot,.node,.step-item{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <div class="badge-row">
+        <span class="badge">WOCHE 5</span>
+        <h1>OnboardGuide AI — MVC Workflow Simulator</h1>
+      </div>
+      <p class="subtitle">Interaktives Ablaufdiagramm — Szenarien &amp; Schritte frei bearbeitbar, nichts ist hart codiert</p>
+    </div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label for="scenario-select">Szenario wählen</label>
+        <select id="scenario-select"></select>
+      </div>
+      <div class="divider"></div>
+      <div class="btn-group">
+        <button id="btn-play" class="ctrl" title="Start / Pause" aria-label="Start / Pause">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button id="btn-next" class="ctrl" title="Nächster Schritt" aria-label="Nächster Schritt">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </button>
+        <button id="btn-reset" class="ctrl" title="Zurücksetzen" aria-label="Zurücksetzen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+      <div class="divider"></div>
+      <div class="field">
+        <label for="speed-select">Tempo</label>
+        <select id="speed-select">
+          <option value="1500">Normal</option>
+          <option value="800">Schnell</option>
+          <option value="2500">Langsam</option>
+        </select>
+      </div>
+        <div class="divider"></div>
+      <div class="field" style="min-width:200px;">
+        <label>🔌 WebSocket (Live)</label>
+        <input type="text" id="ws-url" style="width:220px;font-size:11px;color:var(--text-mid);font-weight:400;" value="ws://localhost:8000/ws/trace" placeholder="ws://localhost:8000/ws/trace">
+      </div>
+      <div class="btn-group" style="align-items:center;gap:8px;">
+        <div id="ws-status" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-low);">
+          <span id="ws-dot" style="width:8px;height:8px;border-radius:50%;background:#4c5773;display:inline-block;transition:background .3s;"></span>
+          <span id="ws-label">Nicht verbunden</span>
+        </div>
+        <button id="btn-ws-connect" class="pill accent">🔌 Verbinden</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="editor-toggle-wrap">
+    <button id="btn-toggle-editor" class="pill accent">✎ Szenario-Editor öffnen</button>
+  </div>
+
+  <div id="editor-panel">
+    <h3>Szenario-Editor</h3>
+    <p class="hint">Lege neue Szenarien an, benenne sie um, lösche sie, oder füge Schritte hinzu / bearbeite / entferne sie. Alles läuft über diese Oberfläche — keine Änderungen im Code nötig.</p>
+
+    <div class="editor-grid">
+      <!-- Scenario management -->
+      <div class="scenario-manage">
+        <label style="font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-low);">Szenarien</label>
+        <div id="scenario-list" class="scenario-list"></div>
+        <button id="btn-add-scenario" class="pill">+ Neues Szenario</button>
+      </div>
+
+      <!-- Step management -->
+      <div>
+        <label style="font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-low);">Neuen Schritt hinzufügen (zu aktuellem Szenario)</label>
+        <div class="step-form" style="margin-top:8px;">
+          <div>
+            <label for="step-from">Von (Node)</label>
+            <select id="step-from"></select>
+          </div>
+          <div>
+            <label for="step-to">Nach (Node)</label>
+            <select id="step-to"></select>
+          </div>
+          <div class="full">
+            <label for="step-title-input">Titel</label>
+            <input type="text" id="step-title-input" placeholder="z.B. Authentifizierung">
+          </div>
+          <div class="full">
+            <label for="step-desc-input">Beschreibung</label>
+            <textarea id="step-desc-input" placeholder="Was passiert in diesem Schritt?"></textarea>
+          </div>
+          <div class="full actions">
+            <button id="btn-add-step" class="pill accent">+ Schritt hinzufügen</button>
+          </div>
+        </div>
+
+        <div id="editable-steps" class="editable-steps"></div>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div>
+      <div class="canvas-panel">
+        <div class="grid-overlay"></div>
+        <div id="stage">
+          <svg id="connections-svg"></svg>
+          <div id="request-dot"></div>
+
+          <div id="node-User" class="node" style="left:5px; top:220px; width:140px;">
+            <div class="eyebrow" style="color:var(--amber)">1. Access</div>
+            <div class="name" style="color:var(--amber)">User Client</div>
+            <div class="desc">Max (Mitarbeiter) / Admin</div>
+          </div>
+          <div id="node-Security" class="node" style="left:170px; top:40px; width:150px;">
+            <div class="eyebrow" style="color:var(--red)">Security Gate</div>
+            <div class="name" style="color:var(--red)">🛡 security.py</div>
+            <div class="desc">Auth Guards &amp; Token Checks</div>
+          </div>
+          <div id="node-Main" class="node" style="left:170px; top:220px; width:150px;">
+            <div class="eyebrow" style="color:var(--cyan)">Entrypoint</div>
+            <div class="name" style="color:var(--cyan)">main.py</div>
+            <div class="desc">FastAPI App &amp; Router Mounting</div>
+          </div>
+          <div id="node-Schema" class="node" style="left:340px; top:40px; width:150px;">
+            <div class="eyebrow" style="color:var(--emerald)">View / Validierung</div>
+            <div class="name" style="color:var(--emerald)">schemas.py</div>
+            <div class="desc">Pydantic Schemas (In &amp; Out Gatekeeper)</div>
+          </div>
+          <div id="node-Router" class="node" style="left:340px; top:220px; width:150px;">
+            <div class="eyebrow" style="color:var(--blue)">Controller Layer</div>
+            <div class="name" style="color:var(--blue)">routers/</div>
+            <div class="desc">auth, users, tasks, documents, chat</div>
+          </div>
+          <div id="node-Database" class="node" style="left:340px; top:400px; width:150px;">
+            <div class="eyebrow" style="color:var(--indigo)">DB Connection</div>
+            <div class="name" style="color:var(--indigo)">database.py</div>
+            <div class="desc">get_db() Connection Lifecycle</div>
+          </div>
+          <div id="node-AIService" class="node" style="left:525px; top:220px; width:160px;">
+            <div class="eyebrow" style="color:var(--purple)">Service Layer</div>
+            <div class="name" style="color:var(--purple)">ai_service.py</div>
+            <div class="desc">RAG Prompt &amp; context compilation</div>
+          </div>
+          <div id="node-PostgreSQL" class="node" style="left:525px; top:400px; width:160px;">
+            <div class="eyebrow" style="color:var(--fuchsia)">Model / DB</div>
+            <div class="name" style="color:var(--fuchsia)">models.py (Postgres)</div>
+            <div class="desc">SQLAlchemy Database Tables</div>
+          </div>
+          <div id="node-OpenAI" class="node" style="left:725px; top:220px; width:150px;">
+            <div class="eyebrow" style="color:var(--teal)">External Brain</div>
+            <div class="name" style="color:var(--teal)">OpenAI API</div>
+            <div class="desc">LLM Generation (gpt-4o-mini)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="dot-key">
+          <span class="swatch"></span>
+          <span>Aktiver Request / Antwortfluss</span>
+        </div>
+        <div class="mvc">
+          <span style="color:var(--amber)">M = Model (models.py)</span>
+          <span style="color:var(--emerald)">V = View (schemas.py)</span>
+          <span style="color:var(--blue)">C = Controller (routers/)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card">
+        <h2>Aktueller Schritt</h2>
+        <div id="step-number">0 / 0</div>
+        <div id="step-title">Lade Simulator…</div>
+      </div>
+      <div class="card log-card">
+        <h2>Datenfluss Protokoll</h2>
+        <div id="explanation-container"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>Entwickelt für das OnboardGuide AI Projekt. Szenarien sind vollständig editierbar — Änderungen gelten für die aktuelle Sitzung.</footer>
+</div>
+
+<script>
+  const nodeCoordinates = {
+    "User":       { x: 75,  y: 280 },
+    "Security":   { x: 245, y: 105 },
+    "Main":       { x: 245, y: 280 },
+    "Schema":     { x: 415, y: 105 },
+    "Router":     { x: 415, y: 280 },
+    "Database":   { x: 415, y: 460 },
+    "AIService":  { x: 605, y: 280 },
+    "PostgreSQL": { x: 605, y: 460 },
+    "OpenAI":     { x: 800, y: 280 }
+  };
+  const nodeLabels = {
+    User: "User Client", Security: "security.py", Main: "main.py",
+    Schema: "schemas.py", Router: "routers/", Database: "database.py",
+    AIService: "ai_service.py", PostgreSQL: "models.py (Postgres)", OpenAI: "OpenAI API"
+  };
+
+  // Mutable in-memory scenario store — fully editable via the UI, nothing hard-locked.
+  let scenarios = {
+    rag_chat: {
+      label: "1. KI-Chat RAG (Max fragt nach WLAN)",
+      steps: [
+        { from: "User", to: "Main", title: "API Request", desc: "Max schickt seine Frage als POST-Request an /api/chat/ask mit der X-User-Id: 12 im Header." },
+        { from: "Main", to: "Security", title: "Authentifizierung", desc: "security.py liest den Header und validiert, ob die User-ID existiert. Der Wächter erlaubt den Einlass." },
+        { from: "Security", to: "Main", title: "Bestätigt", desc: "User-Identität bestätigt. Die Anfrage kehrt zurück an die Zentrale." },
+        { from: "Main", to: "Router", title: "Routing", desc: "main.py leitet das Paket an den registrierten Chat-Router (routers/chat.py) weiter." },
+        { from: "Router", to: "Schema", title: "Schema-Validierung", desc: "Das Eingabe-Schema 'ChatRequest' prüft, ob die Frage vorhanden und der Text valide ist." },
+        { from: "Schema", to: "Router", title: "Daten Valide", desc: "Pydantic validiert den Input erfolgreich und gibt das saubere JSON zurück an den Controller." },
+        { from: "Router", to: "Database", title: "DB-Session anfordern", desc: "Der Router fragt database.py nach get_db() und öffnet eine temporäre Session." },
+        { from: "Database", to: "PostgreSQL", title: "Nutzerdaten laden", desc: "Die SQLAlchemy-Abfrage sucht nach User.id == 12, um die Abteilung (Entwicklung) auszulösen." },
+        { from: "PostgreSQL", to: "Router", title: "Nutzerdaten bereit", desc: "Der Datenbank-Eintrag liegt im Router vor. Max' Abteilung ist jetzt bekannt." },
+        { from: "Router", to: "AIService", title: "Anfrage an KI übergeben", desc: "Der Controller ruft run_rag_chat() im ai_service.py auf und übergibt das User-Objekt." },
+        { from: "AIService", to: "PostgreSQL", title: "RAG & History laden", desc: "ai_service.py holt die ChatMessage-Historie und alle Dokumente der Kategorie 'Entwicklung' direkt aus PostgreSQL." },
+        { from: "PostgreSQL", to: "AIService", title: "Kontext aufgebaut", desc: "Die WLAN-Anleitungen der Entwicklung werden mit dem System Prompt verschmolzen." },
+        { from: "AIService", to: "OpenAI", title: "OpenAI API Aufruf", desc: "Das gesamte RAG-Paket (Prompt + Dokumenten-Auszug + Frage) geht über das OpenAI-SDK an gpt-4o-mini." },
+        { from: "OpenAI", to: "AIService", title: "Antwort generiert", desc: "OpenAI liefert das exakte WLAN-Passwort und die Einrichtungsschritte zurück." },
+        { from: "AIService", to: "Router", title: "Übergabe an Controller", desc: "ai_service.py reicht die fertige Textantwort und die Quellenliste zurück an den Router." },
+        { from: "Router", to: "PostgreSQL", title: "Historie speichern", desc: "Der Router legt einen neuen Eintrag in models.py (ChatMessage) an. Die DB sichert das Gespräch dauerhaft." },
+        { from: "Router", to: "Schema", title: "Ausgabe-Formatierung", desc: "Die Antwort wird im Ausgangs-Schema 'ChatResponse' strukturiert (Content-Filterung)." },
+        { from: "Schema", to: "User", title: "JSON-Antwort an Max", desc: "Max erhält die WLAN-Anleitung auf seinem Bildschirm. Die DB-Session schließt sich automatisch." }
+      ]
+    },
+    complete_task: {
+      label: "2. Task abschließen (Statusänderung)",
+      steps: [
+        { from: "User", to: "Main", title: "Aufgabe abschließen", desc: "Mitarbeiter klickt auf 'Erledigt' (PUT /api/tasks/{task_id}/complete mit X-User-Id)." },
+        { from: "Main", to: "Security", title: "Identität prüfen", desc: "security.py (get_current_user) validiert den User-Header." },
+        { from: "Security", to: "Main", title: "Erlaubt", desc: "User ist authentifiziert. Der Request geht weiter." },
+        { from: "Main", to: "Router", title: "Leitung an TasksRouter", desc: "main.py routet den Call direkt an routers/tasks.py." },
+        { from: "Router", to: "Database", title: "DB-Verbindung holen", desc: "tasks.py initiiert get_db(), um die Tabellen für Task & User zu sperren." },
+        { from: "Database", to: "PostgreSQL", title: "Prüfe Berechtigungen", desc: "Ist der User der Ersteller, Zuweiser oder Admin? Berechtigung wird direkt im SQL-Query verifiziert." },
+        { from: "PostgreSQL", to: "Router", title: "Rechte OK", desc: "Verifizierung erfolgreich. Der User darf diesen Task als abgeschlossen markieren." },
+        { from: "Router", to: "PostgreSQL", title: "Update Status & Fortschritt", desc: "Task-Status wird auf abgeschlossen gesetzt. Die Prozentanzeige des Nutzers wird neu kalkuliert." },
+        { from: "PostgreSQL", to: "Router", title: "Gespeichert", desc: "Die Datenbank bestätigt den Commit der Änderungen." },
+        { from: "Router", to: "Schema", title: "Validierung Ausgabe", desc: "Das Objekt wird im TaskResponse-Schema für den API-Client aufbereitet." },
+        { from: "Schema", to: "User", title: "Erfolgsantwort", desc: "Der User sieht die Aufgabe im Dashboard grün aufleuchten." }
+      ]
+    },
+    auth_fail: {
+      label: "3. Fehlerhafter Admin-Zugriff (Abbruch)",
+      steps: [
+        { from: "User", to: "Main", title: "Admin-Aktion anfragen", desc: "Ein normaler User versucht, einen anderen User zu löschen (DELETE /api/users/5)." },
+        { from: "Main", to: "Security", title: "Admin-Token Check", desc: "security.py fängt den Request ab und prüft den Header 'x-admin-token'." },
+        { from: "Security", to: "Main", title: "ABGEBROCHEN: Kein Admin!", desc: "security.py stellt fest: Token ist ungültig oder fehlt! raise HTTPException(403)." },
+        { from: "Main", to: "User", title: "Sofortiger Abbruch", desc: "Das System stoppt den Request sofort. Es wird KEIN Router geladen, KEINE DB blockiert. Der Angreifer erhält 403 Forbidden." }
+      ]
+    }
+  };
+
+  let currentScenario = "rag_chat";
+  let currentStepIndex = 0;
+  let isPlaying = false;
+  let playInterval = null;
+  let editingStepIdx = null; // index of step being inline-edited in the editor list
+
+  const selectScenario = document.getElementById("scenario-select");
+  const selectSpeed = document.getElementById("speed-select");
+  const btnPlay = document.getElementById("btn-play");
+  const btnNext = document.getElementById("btn-next");
+  const btnReset = document.getElementById("btn-reset");
+  const dot = document.getElementById("request-dot");
+  const stepNumber = document.getElementById("step-number");
+  const stepTitle = document.getElementById("step-title");
+  const explanationContainer = document.getElementById("explanation-container");
+  const svgCanvas = document.getElementById("connections-svg");
+
+  const btnToggleEditor = document.getElementById("btn-toggle-editor");
+  const editorPanel = document.getElementById("editor-panel");
+  const scenarioListEl = document.getElementById("scenario-list");
+  const btnAddScenario = document.getElementById("btn-add-scenario");
+  const stepFromSel = document.getElementById("step-from");
+  const stepToSel = document.getElementById("step-to");
+  const stepTitleInput = document.getElementById("step-title-input");
+  const stepDescInput = document.getElementById("step-desc-input");
+  const btnAddStep = document.getElementById("btn-add-step");
+  const editableStepsEl = document.getElementById("editable-steps");
+
+  function nodeOptionsHtml(selected) {
+    return Object.keys(nodeCoordinates).map(id =>
+      `<option value="${id}" ${id === selected ? "selected" : ""}>${nodeLabels[id]}</option>`
+    ).join("");
+  }
+
+  function populateScenarioSelect() {
+    const prev = selectScenario.value;
+    selectScenario.innerHTML = Object.keys(scenarios).map(key =>
+      `<option value="${key}">${scenarios[key].label}</option>`
+    ).join("");
+    if (scenarios[prev]) selectScenario.value = prev;
+    else selectScenario.value = currentScenario;
+  }
+
+  function uniqueScenarioKey(base) {
+    let key = base, i = 2;
+    while (scenarios[key]) { key = `${base}_${i}`; i++; }
+    return key;
+  }
+
+  function init() {
+    currentStepIndex = 0;
+    isPlaying = false;
+    clearInterval(playInterval);
+    updateButtons();
+    renderStep();
+    renderEditorPanel();
+  }
+
+  function drawAllStaticConnections() {
+    svgCanvas.innerHTML = "";
+    const steps = scenarios[currentScenario].steps;
+    const connections = [];
+    steps.forEach(s => {
+      const key = `${s.from}-${s.to}`;
+      if (!connections.includes(key)) connections.push(key);
+    });
+    connections.forEach(conn => {
+      const [from, to] = conn.split("-");
+      const fromCoord = nodeCoordinates[from];
+      const toCoord = nodeCoordinates[to];
+      if (fromCoord && toCoord) drawPath(fromCoord, toCoord, "#1c2740", 2, true);
+    });
+  }
+
+  function drawPath(p1, p2, color, thickness = 3, dashed = false) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    let d;
+    if (Math.abs(dy) > 100 && Math.abs(dx) > 100) {
+      d = `M ${p1.x} ${p1.y} C ${p1.x + dx/2} ${p1.y}, ${p1.x + dx/2} ${p2.y}, ${p2.x} ${p2.y}`;
+    } else {
+      d = `M ${p1.x} ${p1.y} Q ${(p1.x + p2.x)/2} ${(p1.y + p2.y)/2 - dy*0.1}, ${p2.x} ${p2.y}`;
+    }
+    path.setAttribute("d", d);
+    path.setAttribute("stroke", color);
+    path.setAttribute("stroke-width", thickness);
+    path.setAttribute("fill", "none");
+    path.style.transition = "all .5s ease";
+    if (dashed) path.setAttribute("stroke-dasharray", "5,5");
+    else path.setAttribute("filter", "drop-shadow(0 0 6px rgba(34,211,238,.65))");
+    svgCanvas.appendChild(path);
+  }
+
+  function renderStep() {
+    const steps = scenarios[currentScenario].steps;
+    if (steps.length === 0) {
+      stepNumber.innerText = "0 / 0";
+      stepTitle.innerText = "Dieses Szenario hat noch keine Schritte.";
+      explanationContainer.innerHTML = `<div class="step-item"><p>Füge im Szenario-Editor oben Schritte hinzu, um die Simulation zu starten.</p></div>`;
+      svgCanvas.innerHTML = "";
+      dot.style.opacity = "0";
+      document.querySelectorAll(".node").forEach(n => n.classList.remove("active-from","active-to"));
+      return;
+    }
+    if (currentStepIndex >= steps.length) currentStepIndex = 0;
+    const activeStep = steps[currentStepIndex];
+
+    drawAllStaticConnections();
+    const fromCoord = nodeCoordinates[activeStep.from];
+    const toCoord = nodeCoordinates[activeStep.to];
+    if (fromCoord && toCoord) drawPath(fromCoord, toCoord, "#22d3ee", 3, false);
+
+    if (fromCoord) {
+      dot.style.transition = "opacity .25s ease";
+      dot.style.opacity = "1";
+      dot.style.left = `${fromCoord.x}px`;
+      dot.style.top = `${fromCoord.y}px`;
+      void dot.offsetWidth;
+      requestAnimationFrame(() => {
+        dot.style.transition = "left .7s cubic-bezier(.65,0,.35,1), top .7s cubic-bezier(.65,0,.35,1), opacity .25s ease";
+        dot.style.left = `${toCoord.x}px`;
+        dot.style.top = `${toCoord.y}px`;
+      });
+    } else {
+      dot.style.opacity = "0";
+    }
+
+    stepNumber.innerText = `${currentStepIndex + 1} / ${steps.length}`;
+    stepTitle.innerText = activeStep.title;
+
+    document.querySelectorAll(".node").forEach(node => node.classList.remove("active-from", "active-to"));
+    const activeNodeFrom = document.getElementById(`node-${activeStep.from}`);
+    const activeNodeTo = document.getElementById(`node-${activeStep.to}`);
+    if (activeNodeFrom) activeNodeFrom.classList.add("active-from");
+    if (activeNodeTo) activeNodeTo.classList.add("active-to");
+
+    explanationContainer.innerHTML = "";
+    steps.forEach((step, index) => {
+      const isActive = index === currentStepIndex;
+      const stepItem = document.createElement("div");
+      stepItem.className = `step-item ${isActive ? "active" : ""}`;
+      stepItem.innerHTML = `
+        <div class="row">
+          <span class="step-label">Schritt ${index + 1}: ${step.title}</span>
+          <span class="arrow">${step.from} → ${step.to}</span>
+        </div>
+        <p>${step.desc}</p>
+      `;
+      explanationContainer.appendChild(stepItem);
+      if (isActive) stepItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  }
+
+  function updateButtons() {
+    btnPlay.innerHTML = isPlaying
+      ? `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+  }
+
+  function triggerNextStep() {
+    const steps = scenarios[currentScenario].steps;
+    if (steps.length === 0) return;
+    if (currentStepIndex < steps.length - 1) {
+      currentStepIndex++;
+    } else {
+      currentStepIndex = 0;
+      if (isPlaying) { isPlaying = false; clearInterval(playInterval); updateButtons(); }
+    }
+    renderStep();
+  }
+
+  selectScenario.addEventListener("change", (e) => {
+    currentScenario = e.target.value;
+    init();
+  });
+
+  btnPlay.addEventListener("click", () => {
+    if (scenarios[currentScenario].steps.length === 0) return;
+    isPlaying = !isPlaying;
+    updateButtons();
+    if (isPlaying) {
+      const intervalTime = parseInt(selectSpeed.value);
+      playInterval = setInterval(triggerNextStep, intervalTime);
+    } else {
+      clearInterval(playInterval);
+    }
+  });
+
+  btnNext.addEventListener("click", () => {
+    if (isPlaying) { isPlaying = false; clearInterval(playInterval); updateButtons(); }
+    triggerNextStep();
+  });
+
+  btnReset.addEventListener("click", () => init());
+
+  selectSpeed.addEventListener("change", () => {
+    if (isPlaying) {
+      clearInterval(playInterval);
+      playInterval = setInterval(triggerNextStep, parseInt(selectSpeed.value));
+    }
+  });
+
+  // ---------------- Editor logic ----------------
+
+  btnToggleEditor.addEventListener("click", () => {
+    const open = editorPanel.classList.toggle("open");
+    btnToggleEditor.textContent = open ? "✕ Editor schließen" : "✎ Szenario-Editor öffnen";
+    if (open) renderEditorPanel();
+  });
+
+  function renderEditorPanel() {
+    // scenario list
+    scenarioListEl.innerHTML = "";
+    Object.keys(scenarios).forEach(key => {
+      const sc = scenarios[key];
+      const row = document.createElement("div");
+      row.className = `scenario-row ${key === currentScenario ? "current" : ""}`;
+      row.innerHTML = `
+        <input type="text" value="${sc.label}" data-key="${key}" title="Name bearbeiten">
+        <span class="count">${sc.steps.length} Schritte</span>
+        <button class="icon-btn" title="Auswählen" data-action="select" data-key="${key}">▶</button>
+        <button class="icon-btn danger" title="Löschen" data-action="delete-scenario" data-key="${key}">✕</button>
+      `;
+      scenarioListEl.appendChild(row);
+    });
+
+    scenarioListEl.querySelectorAll('input[type=text]').forEach(inp => {
+      inp.addEventListener("change", (e) => {
+        const key = e.target.dataset.key;
+        scenarios[key].label = e.target.value || scenarios[key].label;
+        populateScenarioSelect();
+      });
+    });
+    scenarioListEl.querySelectorAll('[data-action="select"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        currentScenario = e.target.dataset.key;
+        populateScenarioSelect();
+        selectScenario.value = currentScenario;
+        init();
+      });
+    });
+    scenarioListEl.querySelectorAll('[data-action="delete-scenario"]').forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const key = e.target.dataset.key;
+        if (Object.keys(scenarios).length <= 1) {
+          alert("Mindestens ein Szenario muss erhalten bleiben.");
+          return;
+        }
+        if (!confirm(`Szenario "${scenarios[key].label}" wirklich löschen?`)) return;
+        delete scenarios[key];
+        if (currentScenario === key) currentScenario = Object.keys(scenarios)[0];
+        populateScenarioSelect();
+        selectScenario.value = currentScenario;
+        init();
+      });
+    });
+
+    // from/to node dropdowns for the "add step" form
+    stepFromSel.innerHTML = nodeOptionsHtml("User");
+    stepToSel.innerHTML = nodeOptionsHtml("Main");
+
+    renderEditableSteps();
+  }
+
+  btnAddScenario.addEventListener("click", () => {
+    const name = prompt("Name des neuen Szenarios:", "Neues Szenario");
+    if (!name) return;
+    const key = uniqueScenarioKey(name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "szenario");
+    scenarios[key] = { label: name, steps: [] };
+    currentScenario = key;
+    populateScenarioSelect();
+    selectScenario.value = currentScenario;
+    init();
+  });
+
+  btnAddStep.addEventListener("click", () => {
+    const title = stepTitleInput.value.trim();
+    const desc = stepDescInput.value.trim();
+    if (!title || !desc) {
+      alert("Bitte Titel und Beschreibung ausfüllen.");
+      return;
+    }
+    scenarios[currentScenario].steps.push({
+      from: stepFromSel.value,
+      to: stepToSel.value,
+      title, desc
+    });
+    stepTitleInput.value = "";
+    stepDescInput.value = "";
+    renderEditableSteps();
+    renderStepCountBadge();
+    // if this is the first step ever, render it on the canvas too
+    if (scenarios[currentScenario].steps.length === 1) renderStep();
+  });
+
+  function renderStepCountBadge() {
+    // refresh scenario list counts without a full re-render (keeps input focus states sane)
+    scenarioListEl.querySelectorAll('.scenario-row').forEach(row => {
+      const key = row.querySelector('input[type=text]').dataset.key;
+      row.querySelector('.count').textContent = `${scenarios[key].steps.length} Schritte`;
+    });
+  }
+
+  function renderEditableSteps() {
+    const steps = scenarios[currentScenario].steps;
+    editableStepsEl.innerHTML = "";
+    if (steps.length === 0) {
+      editableStepsEl.innerHTML = `<div class="es-item"><p class="desc-txt">Noch keine Schritte in diesem Szenario. Füge oben den ersten hinzu.</p></div>`;
+      return;
+    }
+    steps.forEach((step, idx) => {
+      const item = document.createElement("div");
+      item.className = "es-item";
+
+      if (editingStepIdx === idx) {
+        item.innerHTML = `
+          <div class="step-form" style="grid-template-columns:1fr 1fr;">
+            <div><label>Von</label><select class="edit-from">${nodeOptionsHtml(step.from)}</select></div>
+            <div><label>Nach</label><select class="edit-to">${nodeOptionsHtml(step.to)}</select></div>
+            <div class="full"><label>Titel</label><input type="text" class="edit-title" value="${step.title.replace(/"/g,'&quot;')}"></div>
+            <div class="full"><label>Beschreibung</label><textarea class="edit-desc">${step.desc}</textarea></div>
+            <div class="full actions">
+              <button class="pill" data-action="cancel-edit">Abbrechen</button>
+              <button class="pill accent" data-action="save-edit" data-idx="${idx}">Speichern</button>
+            </div>
+          </div>
+        `;
+        item.querySelector('[data-action="cancel-edit"]').addEventListener("click", () => {
+          editingStepIdx = null; renderEditableSteps();
+        });
+        item.querySelector('[data-action="save-edit"]').addEventListener("click", () => {
+          const newFrom = item.querySelector(".edit-from").value;
+          const newTo = item.querySelector(".edit-to").value;
+          const newTitle = item.querySelector(".edit-title").value.trim();
+          const newDesc = item.querySelector(".edit-desc").value.trim();
+          if (!newTitle || !newDesc) { alert("Titel und Beschreibung dürfen nicht leer sein."); return; }
+          steps[idx] = { from: newFrom, to: newTo, title: newTitle, desc: newDesc };
+          editingStepIdx = null;
+          renderEditableSteps();
+          renderStep();
+        });
+      } else {
+        item.innerHTML = `
+          <div class="row">
+            <span class="meta">#${idx + 1} · ${step.from} → ${step.to}</span>
+            <div class="btns">
+              <button class="icon-btn" data-action="move-up" title="Nach oben">↑</button>
+              <button class="icon-btn" data-action="move-down" title="Nach unten">↓</button>
+              <button class="icon-btn" data-action="edit" title="Bearbeiten">✎</button>
+              <button class="icon-btn danger" data-action="delete" title="Löschen">✕</button>
+            </div>
+          </div>
+          <div class="txt">${step.title}</div>
+          <div class="desc-txt">${step.desc}</div>
+        `;
+        item.querySelector('[data-action="edit"]').addEventListener("click", () => {
+          editingStepIdx = idx; renderEditableSteps();
+        });
+        item.querySelector('[data-action="delete"]').addEventListener("click", () => {
+          if (!confirm("Diesen Schritt löschen?")) return;
+          steps.splice(idx, 1);
+          renderEditableSteps();
+          renderStepCountBadge();
+          renderStep();
+        });
+        item.querySelector('[data-action="move-up"]').addEventListener("click", () => {
+          if (idx === 0) return;
+          [steps[idx - 1], steps[idx]] = [steps[idx], steps[idx - 1]];
+          renderEditableSteps();
+          renderStep();
+        });
+        item.querySelector('[data-action="move-down"]').addEventListener("click", () => {
+          if (idx === steps.length - 1) return;
+          [steps[idx + 1], steps[idx]] = [steps[idx], steps[idx + 1]];
+          renderEditableSteps();
+          renderStep();
+        });
+      }
+      editableStepsEl.appendChild(item);
+    });
+  }
+
+
+  // ══════════════════════════════════════════════════════════════════
+  //  LIVE WEBSOCKET TRACE
+  //  Swagger → FastAPI → WebSocket Push → Simulator animiert
+  //  Vollautomatisch – kein Button drücken nötig
+  // ══════════════════════════════════════════════════════════════════
+
+  let ws = null;
+  let wsReconnectTimer = null;
+
+  const wsDot    = document.getElementById("ws-dot");
+  const wsLabel  = document.getElementById("ws-label");
+  const btnWsCon = document.getElementById("btn-ws-connect");
+
+  function setWsStatus(state) {
+    const states = {
+      connecting: { color: "#f59e0b", label: "Verbinde...",  btn: "⏳ Verbinde..." },
+      open:       { color: "#34d399", label: "Verbunden ✓",  btn: "⏏ Trennen"      },
+      closed:     { color: "#4c5773", label: "Getrennt",     btn: "🔌 Verbinden"    },
+      error:      { color: "#f43f5e", label: "Fehler",       btn: "🔌 Verbinden"    },
+    };
+    const s = states[state] || states.closed;
+    wsDot.style.background  = s.color;
+    wsLabel.textContent     = s.label;
+    btnWsCon.textContent    = s.btn;
+    if (state === "open") wsDot.style.boxShadow = `0 0 6px 2px ${s.color}`;
+    else                  wsDot.style.boxShadow = "none";
+  }
+
+  function connectWs() {
+    // Auto-detect correct WebSocket URL based on how the page is loaded
+    const wsInput = document.getElementById("ws-url");
+    if (window.location.protocol === "file:") {
+      // file:// cannot connect to WebSocket due to browser security
+      // FastAPI must serve this file at http://localhost:8000/simulator
+      wsInput.value = "ws://localhost:8000/ws/trace";
+      wsInput.style.borderColor = "#f59e0b";
+      wsLabel.textContent = "⚠ Öffne über http://localhost:8000/simulator";
+      wsDot.style.background = "#f59e0b";
+      wsDot.style.boxShadow  = "0 0 6px 2px #f59e0b";
+      return;
+    }
+    // If served via FastAPI, build WebSocket URL from current host
+    if (window.location.protocol.startsWith("http")) {
+      const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsInput.value = wsProto + "//" + window.location.host + "/ws/trace";
+    }
+    const url = wsInput.value.trim();
+    if (!url) return;
+
+    // If already open, disconnect
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.close();
+      setWsStatus("closed");
+      return;
+    }
+
+    setWsStatus("connecting");
+
+    try {
+      ws = new WebSocket(url);
+    } catch(e) {
+      setWsStatus("error");
+      return;
+    }
+
+    ws.onopen = () => {
+      setWsStatus("open");
+      clearTimeout(wsReconnectTimer);
+      // send keepalive ping every 25s
+      ws._pingTimer = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) ws.send("ping");
+      }, 25000);
+    };
+
+    ws.onmessage = (event) => {
+      let payload;
+      try { payload = JSON.parse(event.data); } catch { return; }
+
+      if (payload.type === "pong") return; // keepalive response
+
+      if (payload.type === "live_trace" && Array.isArray(payload.steps) && payload.steps.length) {
+        injectLiveTrace(payload.steps, payload.endpoint || "Live Request");
+      }
+    };
+
+    ws.onclose = () => {
+      clearInterval(ws._pingTimer);
+      setWsStatus("closed");
+      // auto-reconnect after 3s
+      wsReconnectTimer = setTimeout(connectWs, 3000);
+    };
+
+    ws.onerror = () => {
+      setWsStatus("error");
+      ws.close();
+    };
+  }
+
+  function injectLiveTrace(steps, endpointLabel) {
+    // Stop any running playback
+    clearInterval(playInterval);
+    isPlaying = false;
+
+    // Register as new scenario
+    const key   = "live_" + Date.now();
+    const label = "🔴 Live: " + endpointLabel;
+
+    scenarios[key] = { label, steps };
+    currentScenario    = key;
+    currentStepIndex   = 0;
+
+    populateScenarioSelect();
+    selectScenario.value = key;
+    init();
+
+    // Flash the header to signal new trace arrived
+    const header = document.querySelector("header");
+    header.style.transition = "background .3s";
+    header.style.background = "rgba(34,211,238,.07)";
+    setTimeout(() => { header.style.background = ""; }, 1000);
+
+    // Auto-play after canvas settles
+    setTimeout(() => {
+      isPlaying = false;
+      const svgPause = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      btnPlay.querySelector("svg").innerHTML = svgPause;
+      playInterval = setInterval(() => {
+        if (currentStepIndex >= scenarios[currentScenario].steps.length) {
+          clearInterval(playInterval);
+          isPlaying = false;
+          btnPlay.querySelector("svg").innerHTML = '<path d="M8 5v14l11-7z"/>';
+          return;
+        }
+        renderStep();
+        currentStepIndex++;
+      }, parseInt(selectSpeed.value));
+      isPlaying = true;
+    }, 300);
+  }
+
+  btnWsCon.addEventListener("click", connectWs);
+
+  // Auto-connect on load
+  window.addEventListener("load", () => {
+    setTimeout(connectWs, 600);
+  });
+
+
+  // ---------------- Boot ----------------
+  populateScenarioSelect();
+  selectScenario.value = currentScenario;
+  init();
+</script>
+</body>
+</html>
