@@ -15,3 +15,7 @@ OPENAI_MODEL   = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 # Chat settings
 CHAT_HISTORY_LIMIT = 5
+# Chunking settings
+CHUNK_SIZE    = 400   # tokens per chunk
+CHUNK_OVERLAP = 50    # overlap between chunks
+TOP_K_CHUNKS  = 3     # how many chunks to send to the model

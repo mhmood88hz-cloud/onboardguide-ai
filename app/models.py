@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import JSONB
+from pgvector.sqlalchemy import Vector
 from app.database import Base
 
 
@@ -36,7 +38,8 @@ class Document(Base):
     created_at  = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     uploader = relationship("User", back_populates="documents")
-
+    chunks = relationship("DocumentChunk", back_populates="document",
+                          cascade="all, delete-orphan")
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -66,3 +69,17 @@ class Task(Base):
 
     assignee = relationship("User", foreign_keys=[assigned_to], back_populates="tasks_assigned")
     creator  = relationship("User", foreign_keys=[assigned_by], back_populates="tasks_created")
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    chunk_index = Column(Integer, nullable=False)    # position in document
+    content     = Column(Text, nullable=False)       # chunk text
+    embedding   = Column(Vector(1536), nullable=True) # pgvector column
+    token_count = Column(Integer, nullable=True)     # number of tokens
+    chunk_metadata = Column(JSONB, nullable=True)
+    created_at  = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    document = relationship("Document", back_populates="chunks")
