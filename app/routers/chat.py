@@ -54,7 +54,9 @@ async def ask_onboarding_guide(
              "System-Prompt mit Rolle/Abteilung (Pillar B) + History + RAG-Kontext → OpenAI.")
 
     try:
-        ai_reply, context_titles = run_rag_chat(current_user, request.question, db)
+        ai_reply, context_titles, chunk_stats = run_rag_chat(
+            current_user, request.question, db
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -89,9 +91,9 @@ async def ask_onboarding_guide(
     return ChatResponse(
         user_question=request.question,
         ai_response=ai_reply,
-        used_documents=context_titles
+        used_documents=context_titles,
+        chunk_stats=chunk_stats  # NEW
     )
-
 
 @router.post("/tasks/{task_id}/explain", response_model=TaskExplainEndpointResponse)
 async def explain_task_personalized(

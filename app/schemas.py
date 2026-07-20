@@ -77,7 +77,7 @@ class ChatResponse(BaseModel):
     user_question:  str
     ai_response:    str
     used_documents: List[str]
-
+    chunk_stats: List[dict] = []  # NEW – Similarity Scores für Simulator
 class TaskExplanationLLMResponse(BaseModel):
     summary:        str       = Field(..., description="Short summary of the task")
     steps:          List[str] = Field(..., description="Step-by-step instructions")
