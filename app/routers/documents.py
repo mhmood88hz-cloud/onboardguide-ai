@@ -9,7 +9,8 @@ from app.models import User, Document
 from app.schemas import DocumentResponse
 from app.security import verify_admin_token, get_current_user, load_current_user
 from app.services.trace import start_trace, log_step, get_trace
-from app.services.ws_manager import manager   # WebSocket broadcast
+from app.services.ws_manager import manager
+from app.services.chunking_service import embed_document   # NEW
 
 router    = APIRouter(prefix="/api/documents", tags=["Documents"])
 UPLOAD_DIR = Path("uploads")
@@ -26,47 +27,37 @@ async def upload_document(
     file:        UploadFile = File(...),
     db:          Session    = Depends(get_db)
 ):
-    """
-    Uploads a document and broadcasts the architectural trace
-    to every connected MVC Simulator via WebSocket – automatically,
-    without any manual action from the user.
-    """
-
-    # ── Record every layer transition ─────────────────────────────────
     start_trace()
-    log_step("User",       "Main",
+    log_step("User", "Main",
              "POST /api/documents/upload",
-             f"Admin macht einen Request in Swagger: Dokument '{title}' hochladen (Kategorie: {category}).")
-    log_step("Main",       "Security",
-             "Admin-Token Guard",
-             "dependencies=[Depends(verify_admin_token)] fängt den Request ab. x-admin-token Header wird geprüft.")
-    log_step("Security",   "Router",
-             "Berechtigung OK",
-             "Token gültig – Request darf weiter zu routers/documents.py → upload_document().")
-    log_step("Router",     "Schema",
-             "Datei in Speicher lesen",
-             f"await file.read() liest alle {'{size}'} Bytes auf einmal. Verhindert Stream-Exhaustion.")
+             f"Admin uploads '{title}' (category: {category}).")
+    log_step("Main", "Security",
+             "Admin-Token Check",
+             "verify_admin_token validates x-admin-token header.")
+    log_step("Security", "Router",
+             "Authorized",
+             "Token valid – request continues to routers/documents.py.")
+    log_step("Router", "Schema",
+             "File read into memory",
+             "await file.read() reads all bytes at once.")
 
-    # Read file
+    # ── Read file ─────────────────────────────────────────────────────
     file_bytes = await file.read()
 
-    # Update desc with real size
-    trace = get_trace()
-    trace[-1]["desc"] = trace[-1]["desc"].replace("{size}", str(len(file_bytes)))
-
-    log_step("Router",     "Database",
-             "Datei auf Disk speichern",
-             "Bytes werden in uploads/<timestamp>_dateiname geschrieben. filepath-Spalte wird befüllt.")
-
-    # Save to disk
+    # ── Save to disk ──────────────────────────────────────────────────
     safe_filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{file.filename}"
     file_path     = UPLOAD_DIR / safe_filename
     with open(file_path, "wb") as buffer:
         buffer.write(file_bytes)
 
-    # Text extraction
+    log_step("Router", "Database",
+             "File saved to disk",
+             f"Stored as '{safe_filename}' in uploads/ folder.")
+
+    # ── Extract text ──────────────────────────────────────────────────
     content_text = None
     suffix       = Path(file.filename).suffix.lower()
+
     if suffix == ".txt":
         content_text = file_bytes.decode("utf-8", errors="ignore").strip() or None
     elif suffix == ".pdf":
@@ -74,17 +65,18 @@ async def upload_document(
             import io
             from pypdf import PdfReader
             reader       = PdfReader(io.BytesIO(file_bytes))
-            content_text = "\n".join(p.extract_text() or "" for p in reader.pages).strip() or None
+            content_text = "\n".join(
+                p.extract_text() or "" for p in reader.pages
+            ).strip() or None
         except Exception:
             content_text = None
 
-    extracted = f"{len(content_text)} Zeichen extrahiert." if content_text else "Kein Text (gescanntes PDF oder unbekanntes Format)."
-    log_step("Router",     "AIService",
-             "Text-Extraktion (RAG Vorbereitung)",
-             f"pypdf liest alle Seiten der '{suffix}'-Datei. {extracted} "
-             "content-Spalte speichert den Rohtext für die RAG-Pipeline.")
+    extracted = f"{len(content_text)} chars extracted." if content_text else "No text extracted."
+    log_step("Router", "AIService",
+             "Text extraction",
+             f"pypdf ran on '{suffix}' file. {extracted}")
 
-    # Save to DB
+    # ── Save document to DB ───────────────────────────────────────────
     new_doc = Document(
         title=title, filepath=str(file_path),
         content=content_text, category=category, uploaded_by=uploaded_by
@@ -93,27 +85,41 @@ async def upload_document(
     db.commit()
     db.refresh(new_doc)
 
-    log_step("AIService",  "PostgreSQL",
-             "Dokument in DB persistiert",
-             f"models.py legt neuen Eintrag in documents-Tabelle an. "
-             f"id={new_doc.id}, category='{category}', content={'gesetzt' if content_text else 'NULL'}.")
+    log_step("AIService", "PostgreSQL",
+             "Document saved",
+             f"New row in documents table. id={new_doc.id}.")
+
+    # ── Chunking + Embedding (NEW) ────────────────────────────────────
+    chunk_stats = {"chunks_created": 0}
+
+    if content_text:
+        log_step("PostgreSQL", "AIService",
+                 "Chunking + Embedding started",
+                 f"Splitting text into chunks and creating embeddings via "
+                 f"text-embedding-3-small.")
+        try:
+            chunk_stats = embed_document(new_doc.id, content_text, db)
+            log_step("AIService", "PostgreSQL",
+                     "Chunks saved",
+                     f"{chunk_stats['chunks_created']} chunks embedded and saved "
+                     f"to document_chunks in {chunk_stats.get('elapsed_seconds', '?')}s.")
+        except Exception as e:
+            log_step("AIService", "PostgreSQL",
+                     "Embedding failed",
+                     f"Error: {str(e)} – document saved without chunks.")
+
     log_step("PostgreSQL", "Schema",
-             "Response-Validierung",
-             "SQLAlchemy-Objekt → Pydantic DocumentResponse. "
-             "content-Feld wird absichtlich weggelassen (zu groß für Listen-Responses).")
-    log_step("Schema",     "User",
-             "201 Created → Swagger + Simulator",
-             f"Admin sieht 201 Created in Swagger. "
-             f"Simulator empfängt automatisch alle {len(get_trace())} Schritte via WebSocket.")
+             "Response validation",
+             "Pydantic DocumentResponse excludes content field.")
+    log_step("Schema", "User",
+             "201 Created",
+             f"Document saved. {chunk_stats['chunks_created']} chunks created. "
+             f"Simulator received full trace.")
 
-    # ── Broadcast trace to all connected simulators ───────────────────
-    # This runs async – simulators animate immediately, no button needed
+    # ── Broadcast trace ───────────────────────────────────────────────
     await manager.broadcast_trace(
-        trace    = get_trace(),
-        endpoint = f"POST /api/documents/upload ({title})"
+        get_trace(), f"POST /api/documents/upload ({title})"
     )
-
-    # Also attach to header as fallback (for non-WebSocket clients)
     response.headers["X-Workflow-Trace"] = json.dumps(get_trace())
 
     return new_doc
