@@ -5,12 +5,22 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from pathlib import Path
-
+from contextlib import asynccontextmanager
 from app.database import Base, engine, get_db
 from app.routers import auth, users, tasks, documents, chat, ws
 
 Base.metadata.create_all(bind=engine)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    yield
+    # Shutdown – WebSocket connections are closed gracefully
+    for ws in manager.active.copy():
+        try:
+            await ws.close()
+        except Exception:
+            pass
 app = FastAPI(
     title="OnboardGuide AI Backend",
     description="MVC modular design with Live Trace Simulator.",
