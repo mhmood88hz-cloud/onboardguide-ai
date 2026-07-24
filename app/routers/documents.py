@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
@@ -10,7 +11,7 @@ from app.schemas import DocumentResponse
 from app.security import verify_admin_token, get_current_user, load_current_user
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
-from app.services.chunking_service import embed_document   # NEW
+from app.services.chunking_service import embed_document
 
 router    = APIRouter(prefix="/api/documents", tags=["Documents"])
 UPLOAD_DIR = Path("uploads")
@@ -27,37 +28,39 @@ async def upload_document(
     file:        UploadFile = File(...),
     db:          Session    = Depends(get_db)
 ):
+    if not db.query(User).filter(User.id == uploaded_by).first():
+        raise HTTPException(status_code=404, detail="Uploader nicht gefunden!")
+
     start_trace()
     log_step("User", "Main",
              "POST /api/documents/upload",
-             f"Admin uploads '{title}' (category: {category}).")
+             f"Admin lädt Dokument '{title}' hoch (Kategorie: {category}).")
     log_step("Main", "Security",
-             "Admin-Token Check",
-             "verify_admin_token validates x-admin-token header.")
+             "Admin-Token Prüfung",
+             "verify_admin_token prüft den x-admin-token Header.")
     log_step("Security", "Router",
-             "Authorized",
-             "Token valid – request continues to routers/documents.py.")
+             "Berechtigung bestätigt",
+             "Token gültig – Anfrage wird an routers/documents.py weitergeleitet.")
     log_step("Router", "Schema",
-             "File read into memory",
-             "await file.read() reads all bytes at once.")
+             "Datei in Speicher einlesen",
+             "await file.read() liest alle Bytes auf einmal. "
+             "Verhindert Stream-Exhaustion bei pypdf.")
 
-    # ── Read file ─────────────────────────────────────────────────────
     file_bytes = await file.read()
 
-    # ── Save to disk ──────────────────────────────────────────────────
-    safe_filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+    original_filename = Path(file.filename or "upload").name
+    safe_original = re.sub(r"[^A-Za-z0-9._-]", "_", original_filename).strip("._")
+    safe_filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{safe_original or 'upload'}"
     file_path     = UPLOAD_DIR / safe_filename
     with open(file_path, "wb") as buffer:
         buffer.write(file_bytes)
 
     log_step("Router", "Database",
-             "File saved to disk",
-             f"Stored as '{safe_filename}' in uploads/ folder.")
+             "Datei auf Disk gespeichert",
+             f"Datei wurde lokal als '{safe_filename}' im uploads/-Ordner gesichert.")
 
-    # ── Extract text ──────────────────────────────────────────────────
     content_text = None
     suffix       = Path(file.filename).suffix.lower()
-
     if suffix == ".txt":
         content_text = file_bytes.decode("utf-8", errors="ignore").strip() or None
     elif suffix == ".pdf":
@@ -71,12 +74,12 @@ async def upload_document(
         except Exception:
             content_text = None
 
-    extracted = f"{len(content_text)} chars extracted." if content_text else "No text extracted."
+    extracted = f"{len(content_text)} Zeichen extrahiert." if content_text else "Kein Text extrahiert."
     log_step("Router", "AIService",
-             "Text extraction",
-             f"pypdf ran on '{suffix}' file. {extracted}")
+             "Text-Extraktion (RAG Vorbereitung)",
+             f"pypdf verarbeitet '{suffix}'-Datei. {extracted} "
+             "content-Spalte speichert den Rohtext für die RAG-Pipeline.")
 
-    # ── Save document to DB ───────────────────────────────────────────
     new_doc = Document(
         title=title, filepath=str(file_path),
         content=content_text, category=category, uploaded_by=uploaded_by
@@ -86,42 +89,40 @@ async def upload_document(
     db.refresh(new_doc)
 
     log_step("AIService", "PostgreSQL",
-             "Document saved",
-             f"New row in documents table. id={new_doc.id}.")
+             "Dokument in DB gespeichert",
+             f"Neuer Eintrag in documents-Tabelle. "
+             f"id={new_doc.id}, Kategorie='{category}', "
+             f"Inhalt={'gesetzt' if content_text else 'NULL'}.")
 
-    # ── Chunking + Embedding (NEW) ────────────────────────────────────
     chunk_stats = {"chunks_created": 0}
-
     if content_text:
         log_step("PostgreSQL", "AIService",
-                 "Chunking + Embedding started",
-                 f"Splitting text into chunks and creating embeddings via "
-                 f"text-embedding-3-small.")
+                 "Chunking + Einbettung gestartet",
+                 "Text wird in Chunks aufgeteilt und Einbettungen via "
+                 "text-embedding-3-small erstellt.")
         try:
             chunk_stats = embed_document(new_doc.id, content_text, db)
             log_step("AIService", "PostgreSQL",
-                     "Chunks saved",
-                     f"{chunk_stats['chunks_created']} chunks embedded and saved "
-                     f"to document_chunks in {chunk_stats.get('elapsed_seconds', '?')}s.")
+                     "Chunks gespeichert",
+                     f"{chunk_stats['chunks_created']} Chunks eingebettet und in "
+                     f"document_chunks gespeichert "
+                     f"({chunk_stats.get('elapsed_seconds', '?')}s).")
         except Exception as e:
             log_step("AIService", "PostgreSQL",
-                     "Embedding failed",
-                     f"Error: {str(e)} – document saved without chunks.")
+                     "Einbettung fehlgeschlagen",
+                     f"Fehler: {str(e)} – Dokument ohne Chunks gespeichert.")
 
     log_step("PostgreSQL", "Schema",
-             "Response validation",
-             "Pydantic DocumentResponse excludes content field.")
+             "Response-Validierung",
+             "Pydantic DocumentResponse: content-Feld wird weggelassen (zu groß).")
     log_step("Schema", "User",
-             "201 Created",
-             f"Document saved. {chunk_stats['chunks_created']} chunks created. "
-             f"Simulator received full trace.")
+             "201 Erstellt",
+             f"Admin erhält Dokumentdaten. {chunk_stats['chunks_created']} Chunks erstellt.")
 
-    # ── Broadcast trace ───────────────────────────────────────────────
     await manager.broadcast_trace(
         get_trace(), f"POST /api/documents/upload ({title})"
     )
     response.headers["X-Workflow-Trace"] = json.dumps(get_trace())
-
     return new_doc
 
 
@@ -130,7 +131,7 @@ def get_documents(
     db:      Session = Depends(get_db),
     user_id: int     = Depends(get_current_user)
 ):
-    """Role-based document access filter."""
+    """Rollenbasierter Dokumentenzugriff."""
     current_user = load_current_user(user_id, db)
     if current_user.user_role == "Verwaltung":
         return db.query(Document).all()
