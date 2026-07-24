@@ -1,3 +1,4 @@
+import time
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from app.config import OPENAI_API_KEY, OPENAI_MODEL, CHAT_HISTORY_LIMIT
@@ -6,6 +7,21 @@ from app.schemas import TaskExplanationLLMResponse
 
 # Initialize OpenAI client – None if no API key is configured
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+# Models available in this project
+COMPARE_MODELS = ["gpt-4o-mini", "gpt-5-mini"]
+
+# Cost per 1K tokens (as of 2025)
+COST_MAP = {
+    "gpt-4o-mini": {"input": 0.00015, "output": 0.00060},
+    "gpt-5-mini":  {"input": 0.00040, "output": 0.00160},
+}
+
+# gpt-5-mini only supports temperature=1
+SUPPORTED_TEMPERATURE = {
+    "gpt-4o-mini": 0.4,
+    "gpt-5-mini":  1,
+}
 
 
 def get_client():
@@ -19,65 +35,11 @@ def get_client():
     return client
 
 
-def build_rag_context(current_user, db) -> tuple[str, list[str], list[dict]]:
-    """
-    Pillar C – RAG mit Vektorsuche:
-    1. Erlaubte Dokumente nach Rolle filtern
-    2. Frage als Embedding → pgvector Ähnlichkeitssuche
-    3. Nur top-3 relevanteste Chunks zurückgeben
-
-    Returns:
-        context_text:   Text der ans Modell geht
-        context_titles: Dokumenttitel als Quellennachweis
-        chunk_stats:    Similarity Scores für den Simulator
-    """
-    from app.models import Document
-    from app.services.chunking_service import search_similar_chunks
-
-    # Erlaubte Kategorien nach Rolle
-    categories = {"Allgemein"}
-    if current_user.department:
-        categories.add(current_user.department)
-    if current_user.assigned_project:
-        categories.add(current_user.assigned_project)
-
-    # Erlaubte Dokument-IDs laden
-    allowed_docs = db.query(Document).filter(
-        Document.category.in_(categories)
-    ).all()
-    allowed_doc_ids = [d.id for d in allowed_docs]
-
-    if not allowed_doc_ids:
-        return "No documents found.", [], []
-
-    # Dummy-Kontext zurückgeben – echte Suche passiert in run_rag_chat
-    # allowed_doc_ids wird weitergegeben
-    return "", [], allowed_doc_ids
-
-
-def build_conversation_history(current_user: User, db: Session) -> list[dict]:
-    """
-    Pillar A – Conversation History: loads the last k messages from the database
-    and returns them as a list of user/assistant message dicts in chronological order.
-    """
-    history = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.user_id == current_user.id)
-        .order_by(ChatMessage.created_at.desc())
-        .limit(CHAT_HISTORY_LIMIT)
-        .all()
-    )
-    messages = []
-    for msg in reversed(history):  # reverse so oldest message comes first
-        messages.append({"role": "user",      "content": msg.user_question})
-        messages.append({"role": "assistant",  "content": msg.ai_response})
-    return messages
-
-
+# ── PILLAR B ──────────────────────────────────────────────────────────────────
 def build_system_prompt(current_user: User) -> str:
     """
-    Pillar B – Dynamic Context Injection: builds a personalized system prompt
-    using the user's profile data from the database.
+    Pillar B – Dynamic Context Injection:
+    Builds a personalized system prompt using the user's profile from DB.
     """
     return (
         f"You are the personal onboarding assistant for {current_user.username}. "
@@ -89,46 +51,73 @@ def build_system_prompt(current_user: User) -> str:
     )
 
 
-def run_rag_chat(current_user, question: str, db) -> tuple[str, list[str], list[dict]]:
+# ── PILLAR A ──────────────────────────────────────────────────────────────────
+def build_conversation_history(current_user: User, db: Session) -> list[dict]:
     """
-    Kombiniert alle drei Säulen + echte Vektorsuche:
-    - Pillar A: Conversation History
-    - Pillar B: Dynamic Context Injection
-    - Pillar C: RAG mit pgvector (neu)
-
-    Returns:
-        ai_reply:       Antwort des Modells
-        context_titles: genutzte Dokumenttitel
-        chunk_stats:    Similarity Scores für Simulator
+    Pillar A – Conversation History:
+    Loads last k messages and returns them in chronological order.
     """
-    from app.models import Document
-    from app.services.chunking_service import search_similar_chunks
+    history = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == current_user.id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(CHAT_HISTORY_LIMIT)
+        .all()
+    )
+    messages = []
+    for msg in reversed(history):
+        messages.append({"role": "user",      "content": msg.user_question})
+        messages.append({"role": "assistant",  "content": msg.ai_response})
+    return messages
 
-    openai_client = get_client()
 
-    # ── Pillar B: System Prompt ───────────────────────────────────────
-    system_prompt = build_system_prompt(current_user)
-
-    # ── Pillar C: Vektorsuche ─────────────────────────────────────────
-    # Verwaltung sieht alle Dokumente
+# ── PILLAR C ──────────────────────────────────────────────────────────────────
+def _get_allowed_docs(current_user: User, db: Session):
+    """
+    Returns allowed documents based on user role:
+    - Verwaltung → all documents
+    - Others     → Allgemein + own department + own project
+    """
     if current_user.user_role == "Verwaltung":
-        allowed_docs = db.query(Document).all()
+        return db.query(Document).all()
+
+    categories = {"Allgemein"}
+    if current_user.user_role == "Leader":
+        for member in db.query(User).filter(User.reports_to == current_user.id).all():
+            if member.department:
+                categories.add(member.department)
+            if member.assigned_project:
+                categories.add(member.assigned_project)
     else:
-        categories = {"Allgemein"}
         if current_user.department:
             categories.add(current_user.department)
         if current_user.assigned_project:
             categories.add(current_user.assigned_project)
-        allowed_docs = db.query(Document).filter(
-            Document.category.in_(categories)
-        ).all()
+    return db.query(Document).filter(Document.category.in_(categories)).all()
+
+
+def _build_rag_context(
+    question: str,
+    current_user: User,
+    db: Session
+) -> tuple[str, list[str], list[dict]]:
+    """
+    Pillar C – RAG with vector search:
+    1. Filter allowed documents by role
+    2. Convert question to embedding → pgvector cosine search
+    3. Return top-k most relevant chunks with similarity scores
+    """
+    from app.services.chunking_service import search_similar_chunks
+
+    allowed_docs    = _get_allowed_docs(current_user, db)
     allowed_doc_ids = [d.id for d in allowed_docs]
     doc_id_to_title = {d.id: d.title for d in allowed_docs}
 
-    # Vektorsuche – findet die relevantesten Chunks
+    if not allowed_doc_ids:
+        return "No documents found.", [], []
+
     similar_chunks = search_similar_chunks(question, db, allowed_doc_ids)
 
-    # Kontext aus Chunks aufbauen
     context_text   = ""
     context_titles = []
     chunk_stats    = []
@@ -146,38 +135,129 @@ def run_rag_chat(current_user, question: str, db) -> tuple[str, list[str], list[
                 f"{chunk['content']}\n\n"
             )
             chunk_stats.append({
-                "document":        doc_title,
-                "chunk_index":     chunk["chunk_index"],
+                "document":         doc_title,
+                "chunk_index":      chunk["chunk_index"],
                 "similarity_score": chunk["similarity_score"],
-                "token_count":     chunk["token_count"],
+                "token_count":      chunk["token_count"],
             })
     else:
         context_text = "No relevant chunks found for this question."
 
-    # ── Pillar A: Conversation History ────────────────────────────────
-    history  = build_conversation_history(current_user, db)
+    return context_text, context_titles, chunk_stats
 
-    # ── Zusammenbauen ─────────────────────────────────────────────────
+
+def _build_messages(
+    system_prompt: str,
+    history: list[dict],
+    context_text: str,
+    question: str
+) -> list[dict]:
+    """Assembles the full message payload for OpenAI."""
     messages = [{"role": "system", "content": system_prompt}]
     messages += history
     messages.append({
         "role":    "user",
         "content": f"{context_text}\n\nQuestion: {question}"
     })
+    return messages
+
+
+# ── MAIN FUNCTIONS ────────────────────────────────────────────────────────────
+def run_rag_chat(
+    current_user: User, question: str, db: Session
+) -> tuple[str, list[str], list[dict]]:
+    """
+    Combines all three pillars and runs OpenAI chat completion.
+
+    Returns:
+        ai_reply:       model answer
+        context_titles: document titles used as sources
+        chunk_stats:    similarity scores for the simulator
+    """
+    openai_client = get_client()
+
+    system_prompt              = build_system_prompt(current_user)
+    context_text, titles, stats = _build_rag_context(question, current_user, db)
+    history                    = build_conversation_history(current_user, db)
+    messages                   = _build_messages(system_prompt, history,
+                                                 context_text, question)
 
     response = openai_client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=messages,
-        temperature=0.4
+        temperature=SUPPORTED_TEMPERATURE.get(OPENAI_MODEL, 0.4)
     )
 
-    return response.choices[0].message.content, context_titles, chunk_stats
+    return response.choices[0].message.content, titles, stats
 
 
-def run_task_explanation(current_user: User, task, db: Session) -> TaskExplanationLLMResponse:
+def run_model_comparison(
+    current_user: User, question: str, db: Session
+) -> tuple[str, list[str], list[dict], list[dict]]:
     """
-    Generates a structured, personalized task explanation using OpenAI Structured Outputs.
-    The model is forced to return valid JSON matching TaskExplanationLLMResponse.
+    Runs the same RAG question through gpt-4o-mini AND gpt-5-mini.
+    Measures and compares: response time, tokens, cost, answer length.
+
+    The RAG context (chunks + embeddings) is built ONCE and reused for both
+    models – this ensures a fair comparison since retrieval is model-independent.
+
+    Returns:
+        main_reply:   answer from first model (gpt-4o-mini)
+        titles:       document titles used
+        chunk_stats:  similarity scores
+        comparison:   list of stats per model
+    """
+    openai_client = get_client()
+
+    # Build context once – same for both models
+    system_prompt              = build_system_prompt(current_user)
+    context_text, titles, stats = _build_rag_context(question, current_user, db)
+    history                    = build_conversation_history(current_user, db)
+    messages                   = _build_messages(system_prompt, history,
+                                                 context_text, question)
+
+    comparison_results = []
+
+    for model in COMPARE_MODELS:
+        t_start  = time.time()
+
+        response = openai_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=SUPPORTED_TEMPERATURE.get(model, 0.4)  # gpt-5-mini → 1
+        )
+
+        elapsed       = round(time.time() - t_start, 2)
+        input_tokens  = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        ai_reply      = response.choices[0].message.content
+
+        rates = COST_MAP.get(model, {"input": 0, "output": 0})
+        cost  = round(
+            (input_tokens  / 1000 * rates["input"]) +
+            (output_tokens / 1000 * rates["output"]),
+            6
+        )
+
+        comparison_results.append({
+            "model":         model,
+            "response_time": elapsed,
+            "tokens_used":   input_tokens + output_tokens,
+            "cost_usd":      cost,
+            "answer_length": len(ai_reply),
+            "ai_response":   ai_reply,
+        })
+
+    # Return gpt-4o-mini answer as main response
+    return comparison_results[0]["ai_response"], titles, stats, comparison_results
+
+
+def run_task_explanation(
+    current_user: User, task, db: Session
+) -> TaskExplanationLLMResponse:
+    """
+    Generates a structured task explanation using OpenAI Structured Outputs.
+    Forces the model to return exact JSON: summary + steps + tools_and_tips.
     """
     openai_client = get_client()
 
@@ -187,7 +267,7 @@ def run_task_explanation(current_user: User, task, db: Session) -> TaskExplanati
         f"(Role: {current_user.user_role}, "
         f"Department: {current_user.department or 'General'}, "
         f"Project: {current_user.assigned_project or 'None'}). "
-        "Adjust terminology, depth and examples to their profile. "
+        "Adjust terminology and examples to their profile. "
         "Respond ONLY in the specified JSON format."
     )
 
@@ -205,6 +285,6 @@ def run_task_explanation(current_user: User, task, db: Session) -> TaskExplanati
             {"role": "user",   "content": prompt_content}
         ],
         response_format=TaskExplanationLLMResponse,
-        temperature=0.4
+        temperature=SUPPORTED_TEMPERATURE.get(OPENAI_MODEL, 0.4)
     )
     return response.choices[0].message.parsed
