@@ -55,12 +55,12 @@ def embed_document(document_id: int, text: str, db: Session) -> Dict:
     Returns stats for the live trace simulator.
     """
     if not client:
-        return {"chunks": 0, "error": "OpenAI client not configured"}
+        return {"chunks_created": 0, "error": "OpenAI client not configured"}
 
     # Step 1: Split into chunks
     chunks = chunk_text(text)
     if not chunks:
-        return {"chunks": 0, "error": "No text to embed"}
+        return {"chunks_created": 0, "error": "No text to embed"}
 
     # Step 2 + 3: Embed each chunk and save to DB
     saved   = 0
