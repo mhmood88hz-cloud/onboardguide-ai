@@ -4,12 +4,6 @@ import json
 
 
 class TraceConnectionManager:
-    """
-    Manages all active WebSocket connections to the simulator.
-    When a real API request completes, the trace is broadcast
-    to every connected simulator instance in real time.
-    """
-
     def __init__(self):
         self.active: List[WebSocket] = []
 
@@ -21,25 +15,28 @@ class TraceConnectionManager:
         if ws in self.active:
             self.active.remove(ws)
 
-    async def broadcast_trace(self, trace: list, endpoint: str):
+    async def broadcast_trace(self, trace: list, endpoint: str,
+                              extras: dict = None):
         """
-        Push the recorded trace to every connected simulator.
-        Payload format matches exactly what the simulator JS expects.
+        Push trace + optional extras (e.g. chunk_stats) to all simulators.
         """
-        payload = json.dumps({
+        payload = {
             "type":     "live_trace",
             "endpoint": endpoint,
-            "steps":    trace
-        })
+            "steps":    trace,
+        }
+        if extras:
+            payload.update(extras)   # adds chunk_stats to payload
+
+        data = json.dumps(payload)
         dead = []
         for ws in self.active:
             try:
-                await ws.send_text(payload)
+                await ws.send_text(data)
             except Exception:
                 dead.append(ws)
         for ws in dead:
             self.disconnect(ws)
 
 
-# Singleton – imported by routers and services
 manager = TraceConnectionManager()
