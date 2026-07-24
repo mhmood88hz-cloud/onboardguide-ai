@@ -71,13 +71,24 @@ class DocumentResponse(BaseModel):
 
 # ── AI / Chat ─────────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
-    question: str = Field(..., min_length=2)
+    question:       str  = Field(..., min_length=2)
+    compare_models: bool = False   # wenn True: beide Modelle vergleichen
+
+class ModelStats(BaseModel):
+    model:         str
+    response_time: float   # in Sekunden
+    tokens_used:   int
+    cost_usd:      float   # geschätzte Kosten
+    answer_length: int     # Zeichen
+    ai_response:   str
 
 class ChatResponse(BaseModel):
     user_question:  str
     ai_response:    str
     used_documents: List[str]
-    chunk_stats: List[dict] = []  # NEW – Similarity Scores für Simulator
+    chunk_stats:    List[dict] = []
+    model_comparison: List[dict] = []
+    model_config = {"protected_namespaces": ()}  # ← NEU
 class TaskExplanationLLMResponse(BaseModel):
     summary:        str       = Field(..., description="Short summary of the task")
     steps:          List[str] = Field(..., description="Step-by-step instructions")
