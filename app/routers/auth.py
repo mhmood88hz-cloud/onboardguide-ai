@@ -18,55 +18,45 @@ async def register_user(
     response: Response,
     db:       Session = Depends(get_db)
 ):
-    """Creates a new user with live trace broadcast."""
     start_trace()
     log_step("User", "Main",
              "POST /api/auth/register",
-             f"Admin registriert neuen User '{user.username}' "
+             f"Admin registriert neuen Benutzer '{user.username}' "
              f"(Rolle: {user.user_role}, Abteilung: {user.department or 'keine'}).")
-
     log_step("Main", "Security",
-             "Admin-Token Guard",
-             "dependencies=[Depends(verify_admin_token)] prüft x-admin-token Header "
-             "bevor der Endpoint überhaupt läuft.")
-
+             "Admin-Token Prüfung",
+             "verify_admin_token prüft den x-admin-token Header "
+             "bevor der Endpoint ausgeführt wird.")
     log_step("Security", "Schema",
-             "Pydantic validiert Input",
+             "Pydantic validiert Eingabe",
              f"UserCreate: EmailStr prüft E-Mail-Format, "
-             f"Literal[...] prüft Rolle '{user.user_role}', "
+             f"Literal prüft Rolle '{user.user_role}', "
              f"min_length=6 prüft Passwort. 422 bei ungültigen Werten.")
-
     log_step("Schema", "Router",
-             "Routing zu auth.py",
-             "Alle Eingaben valide – register_user() übernimmt die Business-Logik.")
+             "Weiterleitung zu auth.py",
+             "Alle Eingaben valide – register_user() übernimmt die Logik.")
 
-    # Check username
     if db.query(User).filter(User.username == user.username).first():
-        raise HTTPException(status_code=400, detail="Username already registered!")
-
+        raise HTTPException(status_code=400, detail="Benutzername bereits vergeben!")
     log_step("Router", "PostgreSQL",
-             "Duplikat-Check Username",
+             "Duplikat-Prüfung Benutzername",
              f"SELECT * FROM users WHERE username='{user.username}' → nicht gefunden. OK.")
 
-    # Check email
     if db.query(User).filter(User.email == user.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered!")
-
+        raise HTTPException(status_code=400, detail="E-Mail bereits registriert!")
     log_step("PostgreSQL", "Router",
-             "Duplikat-Check Email",
+             "Duplikat-Prüfung E-Mail",
              f"SELECT * FROM users WHERE email='{user.email}' → nicht gefunden. OK.")
 
     log_step("Router", "Security",
              "Passwort hashen",
-             "hash_password() → pwd_context.hash() → bcrypt mit zufälligem Salt. "
-             "Ergebnis: 60-Zeichen Hash. Niemals Klartext in DB.")
-
-    hashed = hash_password(user.password)
+             "hash_password() → bcrypt mit zufälligem Salt. "
+             "Ergebnis: 60-Zeichen Hash. Niemals Klartext in der Datenbank.")
 
     new_user = User(
         username=user.username,
         email=user.email,
-        password_hash=hashed,
+        password_hash=hash_password(user.password),
         user_role=user.user_role,
         assigned_project=user.assigned_project,
         department=user.department,
@@ -77,19 +67,17 @@ async def register_user(
     db.refresh(new_user)
 
     log_step("Security", "Database",
-             "User in DB anlegen",
+             "Benutzer in DB anlegen",
              f"db.add(new_user) → db.commit() → db.refresh(). "
-             f"Neuer User id={new_user.id} erstellt.")
-
+             f"Neuer Benutzer id={new_user.id} erstellt.")
     log_step("Database", "Schema",
              "UserResponse validieren",
-             "Pydantic UserResponse: password und password_hash werden "
+             "Pydantic UserResponse: Passwort und password_hash werden "
              "NICHT zurückgegeben – nur sichere Felder.")
-
     log_step("Schema", "User",
-             "201 Created",
-             f"Admin erhält User-Daten ohne Passwort. "
-             f"User '{new_user.username}' kann sich jetzt einloggen.")
+             "201 Erstellt",
+             f"Admin erhält Benutzerdaten ohne Passwort. "
+             f"Benutzer '{new_user.username}' kann sich jetzt einloggen.")
 
     await manager.broadcast_trace(get_trace(), "POST /api/auth/register")
     response.headers["X-Workflow-Trace"] = json.dumps(get_trace())
