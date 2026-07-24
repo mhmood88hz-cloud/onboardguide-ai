@@ -203,16 +203,14 @@
           <option value="2500">Langsam</option>
         </select>
       </div>
-        <div class="divider"></div>
-      <div class="field" style="min-width:200px;">
-        <label>🔌 WebSocket (Live)</label>
-        <input type="text" id="ws-url" style="width:220px;font-size:11px;color:var(--text-mid);font-weight:400;" value="ws://localhost:8000/ws/trace" placeholder="ws://localhost:8000/ws/trace">
+      <div class="divider"></div>
+      <div class="field">
+        <label>🔌 WebSocket</label>
+        <input type="text" id="ws-url" style="width:210px;font-size:11px;" value="ws://localhost:8000/ws/trace">
       </div>
-      <div class="btn-group" style="align-items:center;gap:8px;">
-        <div id="ws-status" style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-low);">
-          <span id="ws-dot" style="width:8px;height:8px;border-radius:50%;background:#4c5773;display:inline-block;transition:background .3s;"></span>
-          <span id="ws-label">Nicht verbunden</span>
-        </div>
+      <div class="btn-group" style="align-items:center;gap:6px;">
+        <span id="ws-dot" style="width:9px;height:9px;border-radius:50%;background:#475569;display:inline-block;transition:all .3s;"></span>
+        <span id="ws-label" style="font-size:11px;color:var(--text-low);">Getrennt</span>
         <button id="btn-ws-connect" class="pill accent">🔌 Verbinden</button>
       </div>
     </div>
@@ -801,159 +799,141 @@
     });
   }
 
-
-  // ══════════════════════════════════════════════════════════════════
-  //  LIVE WEBSOCKET TRACE
-  //  Swagger → FastAPI → WebSocket Push → Simulator animiert
-  //  Vollautomatisch – kein Button drücken nötig
-  // ══════════════════════════════════════════════════════════════════
-
-  let ws = null;
-  let wsReconnectTimer = null;
-
-  const wsDot    = document.getElementById("ws-dot");
-  const wsLabel  = document.getElementById("ws-label");
-  const btnWsCon = document.getElementById("btn-ws-connect");
-
-  function setWsStatus(state) {
-    const states = {
-      connecting: { color: "#f59e0b", label: "Verbinde...",  btn: "⏳ Verbinde..." },
-      open:       { color: "#34d399", label: "Verbunden ✓",  btn: "⏏ Trennen"      },
-      closed:     { color: "#4c5773", label: "Getrennt",     btn: "🔌 Verbinden"    },
-      error:      { color: "#f43f5e", label: "Fehler",       btn: "🔌 Verbinden"    },
-    };
-    const s = states[state] || states.closed;
-    wsDot.style.background  = s.color;
-    wsLabel.textContent     = s.label;
-    btnWsCon.textContent    = s.btn;
-    if (state === "open") wsDot.style.boxShadow = `0 0 6px 2px ${s.color}`;
-    else                  wsDot.style.boxShadow = "none";
-  }
-
-  function connectWs() {
-    // Auto-detect correct WebSocket URL based on how the page is loaded
-    const wsInput = document.getElementById("ws-url");
-    if (window.location.protocol === "file:") {
-      // file:// cannot connect to WebSocket due to browser security
-      // FastAPI must serve this file at http://localhost:8000/simulator
-      wsInput.value = "ws://localhost:8000/ws/trace";
-      wsInput.style.borderColor = "#f59e0b";
-      wsLabel.textContent = "⚠ Öffne über http://localhost:8000/simulator";
-      wsDot.style.background = "#f59e0b";
-      wsDot.style.boxShadow  = "0 0 6px 2px #f59e0b";
-      return;
-    }
-    // If served via FastAPI, build WebSocket URL from current host
-    if (window.location.protocol.startsWith("http")) {
-      const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
-      wsInput.value = wsProto + "//" + window.location.host + "/ws/trace";
-    }
-    const url = wsInput.value.trim();
-    if (!url) return;
-
-    // If already open, disconnect
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close();
-      setWsStatus("closed");
-      return;
-    }
-
-    setWsStatus("connecting");
-
-    try {
-      ws = new WebSocket(url);
-    } catch(e) {
-      setWsStatus("error");
-      return;
-    }
-
-    ws.onopen = () => {
-      setWsStatus("open");
-      clearTimeout(wsReconnectTimer);
-      // send keepalive ping every 25s
-      ws._pingTimer = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) ws.send("ping");
-      }, 25000);
-    };
-
-    ws.onmessage = (event) => {
-      let payload;
-      try { payload = JSON.parse(event.data); } catch { return; }
-
-      if (payload.type === "pong") return; // keepalive response
-
-      if (payload.type === "live_trace" && Array.isArray(payload.steps) && payload.steps.length) {
-        injectLiveTrace(payload.steps, payload.endpoint || "Live Request");
-      }
-    };
-
-    ws.onclose = () => {
-      clearInterval(ws._pingTimer);
-      setWsStatus("closed");
-      // auto-reconnect after 3s
-      wsReconnectTimer = setTimeout(connectWs, 3000);
-    };
-
-    ws.onerror = () => {
-      setWsStatus("error");
-      ws.close();
-    };
-  }
-
-  function injectLiveTrace(steps, endpointLabel) {
-    // Stop any running playback
-    clearInterval(playInterval);
-    isPlaying = false;
-
-    // Register as new scenario
-    const key   = "live_" + Date.now();
-    const label = "🔴 Live: " + endpointLabel;
-
-    scenarios[key] = { label, steps };
-    currentScenario    = key;
-    currentStepIndex   = 0;
-
-    populateScenarioSelect();
-    selectScenario.value = key;
-    init();
-
-    // Flash the header to signal new trace arrived
-    const header = document.querySelector("header");
-    header.style.transition = "background .3s";
-    header.style.background = "rgba(34,211,238,.07)";
-    setTimeout(() => { header.style.background = ""; }, 1000);
-
-    // Auto-play after canvas settles
-    setTimeout(() => {
-      isPlaying = false;
-      const svgPause = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-      btnPlay.querySelector("svg").innerHTML = svgPause;
-      playInterval = setInterval(() => {
-        if (currentStepIndex >= scenarios[currentScenario].steps.length) {
-          clearInterval(playInterval);
-          isPlaying = false;
-          btnPlay.querySelector("svg").innerHTML = '<path d="M8 5v14l11-7z"/>';
-          return;
-        }
-        renderStep();
-        currentStepIndex++;
-      }, parseInt(selectSpeed.value));
-      isPlaying = true;
-    }, 300);
-  }
-
-  btnWsCon.addEventListener("click", connectWs);
-
-  // Auto-connect on load
-  window.addEventListener("load", () => {
-    setTimeout(connectWs, 600);
-  });
-
-
   // ---------------- Boot ----------------
   populateScenarioSelect();
   selectScenario.value = currentScenario;
   init();
+
+  // ════════════════════════════════════════════════════════════
+  //  LIVE WEBSOCKET TRACE
+  // ════════════════════════════════════════════════════════════
+  var _ws = null, _wsRetry = null;
+  var _dot = document.getElementById('ws-dot');
+  var _lbl = document.getElementById('ws-label');
+  var _btn = document.getElementById('btn-ws-connect');
+
+  function _setStatus(state) {
+    var m = {
+      connecting: ['#F59E0B','Verbinde...','⏳'],
+      open:       ['#34D399','Verbunden ✓','⏏ Trennen'],
+      closed:     ['#475569','Getrennt',   '🔌 Verbinden'],
+      error:      ['#EF4444','Fehler',      '🔌 Verbinden']
+    };
+    var s = m[state] || m.closed;
+    _dot.style.background = s[0];
+    _dot.style.boxShadow  = state==='open' ? '0 0 7px '+s[0] : 'none';
+    _lbl.textContent = s[1];
+    _btn.textContent = s[2];
+  }
+
+  function _connect() {
+    if (window.location.protocol === 'file:') {
+      _lbl.textContent = '⚠ Öffne über http://localhost:8000/simulator';
+      _dot.style.background = '#F59E0B';
+      return;
+    }
+    var proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    var url   = proto + '//' + window.location.host + '/ws/trace';
+    document.getElementById('ws-url').value = url;
+    if (_ws && _ws.readyState === WebSocket.OPEN) { _ws.close(); return; }
+    _setStatus('connecting');
+    _ws = new WebSocket(url);
+    _ws.onopen  = function() { _setStatus('open'); clearTimeout(_wsRetry); };
+    _ws.onclose = function() { _setStatus('closed'); _wsRetry = setTimeout(_connect, 3000); };
+    _ws.onerror = function() { _setStatus('error'); };
+    _ws.onmessage = function(e) {
+      var p; try { p = JSON.parse(e.data); } catch(x) { return; }
+      if (p.type === 'pong') return;
+      if (p.type === 'live_trace' && p.steps && p.steps.length) {
+        _onTrace(p.steps, p.endpoint||'Live', p.chunk_stats||[], p.model_comparison||[]);
+      }
+    };
+  }
+
+  function _onTrace(steps, label, chunks, models) {
+    clearInterval(playInterval); isPlaying = false;
+    var key = 'live_' + Date.now();
+    scenarios[key] = { label: '🔴 Live: ' + label, steps: steps };
+    currentScenario  = key; currentStepIndex = 0;
+    populateScenarioSelect(); selectScenario.value = key; init();
+    // flash header
+    var h = document.querySelector('header');
+    h.style.transition = 'background .3s'; h.style.background = 'rgba(34,211,238,.06)';
+    setTimeout(function(){ h.style.background=''; }, 900);
+    // panels
+    setTimeout(function(){
+      if (chunks.length > 0) _showChunks(chunks);
+      if (models.length > 0) _showModels(models);
+    }, 150);
+    // auto-play
+    setTimeout(function(){
+      isPlaying = true;
+      btnPlay.querySelector('svg').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+      playInterval = setInterval(function(){
+        if (currentStepIndex >= scenarios[currentScenario].steps.length){
+          clearInterval(playInterval); isPlaying = false;
+          btnPlay.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z"/>'; return;
+        }
+        renderStep(); currentStepIndex++;
+      }, parseInt(selectSpeed.value));
+    }, 350);
+  }
+
+  function _showChunks(chunks) {
+    var old = document.getElementById('rag-scores-panel'); if(old) old.remove();
+    var d = document.createElement('div');
+    d.id = 'rag-scores-panel';
+    d.style.cssText = 'position:fixed;bottom:20px;right:20px;min-width:300px;background:var(--bg-2,#10192b);border:1px solid var(--line,#1e3a5f);border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:9999;font-family:inherit;';
+    var rows = '';
+    chunks.forEach(function(c){
+      var pct = Math.round(c.similarity_score*100);
+      var col = pct>60?'#34D399':pct>40?'#F59E0B':'#94A3B8';
+      rows += '<div style="margin-bottom:9px;">'
+        +'<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">'
+        +'<span style="color:var(--text-hi,#e2e8f0);">'+(c.document||'').substring(0,20)+'... #'+c.chunk_index+'</span>'
+        +'<span style="color:'+col+';font-weight:700;">'+pct+'%</span></div>'
+        +'<div style="background:#05070d;border-radius:4px;height:7px;overflow:hidden;">'
+        +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:4px;transition:width .8s;"></div></div>'
+        +'<div style="font-size:10px;color:var(--text-low,#4a5568);margin-top:2px;">'+(c.token_count||0)+' Wörter</div></div>';
+    });
+    d.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+      +'<span style="color:#CADCFC;font-weight:700;font-size:13px;">📊 RAG Similarity Scores</span>'
+      +'<button id="btn-close-rag" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:18px;line-height:1;">✕</button></div>'
+      +rows
+      +'<div style="font-size:10px;color:#475569;border-top:1px solid #1E293B;padding-top:7px;margin-top:4px;">pgvector · text-embedding-3-small</div>';
+    document.body.appendChild(d);
+    document.getElementById("btn-close-rag").addEventListener("click", function(){ document.getElementById("rag-scores-panel").remove(); });
+  }
+
+  function _showModels(models) {
+    var old = document.getElementById('model-comp-panel'); if(old) old.remove();
+    var d = document.createElement('div');
+    d.id = 'model-comp-panel';
+    d.style.cssText = 'position:fixed;bottom:20px;left:20px;min-width:410px;background:var(--bg-2,#10192b);border:1px solid var(--line,#1e3a5f);border-radius:12px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.6);z-index:9999;font-family:inherit;';
+    var best = models.reduce(function(a,b){ return a.response_time<=b.response_time?a:b; }).model;
+    var cols = models.map(function(m){
+      var col = m.model==='gpt-4o-mini'?'#34D399':'#F59E0B';
+      return '<div style="flex:1;padding:10px;border:1px solid '+col+'55;border-radius:8px;">'
+        +'<div style="color:'+col+';font-weight:700;font-size:12px;margin-bottom:7px;">'+m.model+(m.model===best?' 🏆':'')+'</div>'
+        +'<div style="font-size:11px;color:#94A3B8;line-height:2.0;">'
+        +'⏱ <b style="color:#E2E8F0;">'+m.response_time+'s</b><br>'
+        +'🔢 <b style="color:#E2E8F0;">'+m.tokens_used+' tokens</b><br>'
+        +'💰 <b style="color:#E2E8F0;">$'+m.cost_usd+'</b><br>'
+        +'📝 <b style="color:#E2E8F0;">'+m.answer_length+' chars</b>'
+        +'</div></div>';
+    }).join('');
+    d.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+      +'<span style="color:#CADCFC;font-weight:700;font-size:13px;">⚡ Model Comparison</span>'
+      +'<button id="btn-close-model" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:18px;line-height:1;">✕</button></div>'
+      +'<div style="display:flex;gap:8px;">'+cols+'</div>'
+      +'<div style="font-size:10px;color:#475569;border-top:1px solid #1E293B;padding-top:7px;margin-top:8px;">gpt-4o-mini vs gpt-5-mini · gleicher RAG-Kontext</div>';
+    document.body.appendChild(d);
+    document.getElementById("btn-close-model").addEventListener("click", function(){ document.getElementById("model-comp-panel").remove(); });
+  }
+
+  document.getElementById('btn-ws-connect').addEventListener('click', _connect);
+  window.addEventListener('load', function(){ setTimeout(_connect, 700); });
+
 </script>
 </body>
 </html>
