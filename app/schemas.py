@@ -98,3 +98,15 @@ class TaskExplainEndpointResponse(BaseModel):
     task_id:     int
     task_title:  str
     explanation: TaskExplanationLLMResponse
+
+# ── JWT Auth ──────────────────────────────────────────────────────────────
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=3)
+    password: str = Field(..., min_length=6)
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type:   str = "bearer"
+    user_id:      int
+    username:     str
+    user_role:    str
