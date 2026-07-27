@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
-from app.security import verify_admin_token
+from app.security import require_verwaltung
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
 
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/users", tags=["Users"])
 
 
 @router.delete("/{user_id}", status_code=200,
-               dependencies=[Depends(verify_admin_token)])
+               dependencies=[Depends(require_verwaltung)])
 async def delete_user(
     user_id:  int,
     response: Response,
