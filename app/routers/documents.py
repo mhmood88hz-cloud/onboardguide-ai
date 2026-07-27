@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Document
 from app.schemas import DocumentResponse
-from app.security import verify_admin_token, get_current_user, load_current_user
+from app.security import require_verwaltung, get_current_user, load_current_user
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
 from app.services.chunking_service import embed_document
@@ -19,7 +19,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 @router.post("/upload", response_model=DocumentResponse, status_code=201,
-             dependencies=[Depends(verify_admin_token)])
+             dependencies=[Depends(require_verwaltung)])
 async def upload_document(
     response:    Response,
     title:       str        = Form(...),
