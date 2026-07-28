@@ -298,12 +298,7 @@ Pillar C — Vector RAG (pgvector)
 ### 🔜 Planned
 
 - [ ] Frontend with React (Figma design)
-- [ ] Alembic database migrations
 - [ ] pytest automated tests
-- [ ] Docker containerization
-- [ ] Azure OpenAI for sensitive data (private deployment)
-
----
 
 ## About
 
