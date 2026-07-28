@@ -110,3 +110,11 @@ class TokenResponse(BaseModel):
     user_id:      int
     username:     str
     user_role:    str
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(..., min_length=6)
+    new_password: str = Field(..., min_length=6)
+
+class ResetPasswordRequest(BaseModel):
+    user_id:      int
+    new_password: str = Field(..., min_length=6)
