@@ -145,9 +145,56 @@ TOP_K_CHUNKS=3
 
 ## Architecture
 
-```
+```mermaid
+graph TB
+    subgraph Client["Client Layer"]
+        Swagger["Swagger UI (/docs)"]
+        Simulator["Live Trace Simulator (/simulator)"]
+    end
 
+    subgraph Backend["Backend (FastAPI + Python 3.12)"]
+        Main["main.py — Entry Point (35 lines)"]
 
+        subgraph Routers["Controller Layer (routers/)"]
+            Auth["auth.py"]
+            Users["users.py"]
+            Tasks["tasks.py"]
+            Docs["documents.py"]
+            Chat["chat.py"]
+            WS["ws.py"]
+        end
+
+        subgraph Services["Service Layer (services/)"]
+            AI["ai_service.py"]
+            Chunk["chunking_service.py"]
+            Trace["trace.py"]
+            WSM["ws_manager.py"]
+        end
+
+        subgraph Shared["Shared"]
+            Config["config.py"]
+            Security["security.py"]
+            Schema["schemas.py"]
+            DB["database.py"]
+        end
+    end
+
+    subgraph Database["Database Layer"]
+        PG[("PostgreSQL + pgvector")]
+    end
+
+    subgraph External["External AI"]
+        OpenAI["OpenAI API"]
+    end
+
+    Swagger --> Main
+    Simulator -->|WebSocket| WS
+    Main --> Routers
+    Routers --> Services
+    Routers --> Shared
+    Services --> PG
+    Services --> OpenAI
+    WSM --> Simulator
 ```
 
 ---
