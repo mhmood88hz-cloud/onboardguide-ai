@@ -146,116 +146,69 @@ TOP_K_CHUNKS=3
 ## Architecture
 
 ```
-graph TB
-    subgraph Client["Client Layer"]
-        Swagger["Swagger UI (/docs)"]
-        Simulator["Live Trace Simulator (/simulator)"]
-    end
 
-    subgraph Backend["Backend (FastAPI)"]
-        Main["main.py — Entry Point (35 lines)"]
 
-        subgraph Routers["Controller Layer (routers/)"]
-            Auth["auth.py"]
-            Users["users.py"]
-            Tasks["tasks.py"]
-            Docs["documents.py"]
-            Chat["chat.py"]
-            WS["ws.py"]
-        end
-
-        subgraph Services["Service Layer (services/)"]
-            AI["ai_service.py — RAG + Model Comparison"]
-            Chunk["chunking_service.py — Text → Chunks → Embeddings"]
-            Trace["trace.py — Live Trace Recording"]
-            WSM["ws_manager.py — WebSocket Broadcast"]
-        end
-
-        subgraph Shared["Shared"]
-            Config["config.py"]
-            Security["security.py — JWT + bcrypt"]
-            Schema["schemas.py — Pydantic"]
-            DB["database.py — SQLAlchemy"]
-        end
-    end
-
-    subgraph Database["Database Layer"]
-        PG[("PostgreSQL + pgvector")]
-    end
-
-    subgraph AI_External["External AI"]
-        OpenAI["OpenAI API"]
-    end
-
-    Swagger --> Main
-    Main --> Routers
-    Routers --> Services
-    Services --> PG
-    Services --> OpenAI
-    WSM --> Simulator
 ```
 
 ---
 
 ## Database
 
-```
+```mermaid
 erDiagram
-    users ||--o{ tasks : assigned_to
-    users ||--o{ chat_messages : user_id
-    users ||--o{ documents : uploaded_by
-    documents ||--o{ document_chunks : document_id
+    users ||--o{ tasks : "assigned_to"
+    users ||--o{ chat_messages : "user_id"
+    users ||--o{ documents : "uploaded_by"
+    documents ||--o{ document_chunks : "document_id"
 
     users {
-        INT id
-        TEXT username
-        TEXT email
-        TEXT password_hash
-        TEXT user_role
-        TEXT department
-        TEXT assigned_project
-        INT reports_to
-        INT progress_percent
+        int id PK
+        string username
+        string email
+        string password_hash
+        string user_role
+        string department
+        string assigned_project
+        int reports_to FK
+        int progress_percent
     }
 
     documents {
-        INT id
-        TEXT title
-        TEXT filepath
-        TEXT content
-        TEXT category
-        INT uploaded_by
+        int id PK
+        string title
+        string filepath
+        string content
+        string category
+        int uploaded_by FK
     }
 
     document_chunks {
-        INT id
-        INT document_id
-        INT chunk_index
-        TEXT content
-        VECTOR embedding
-        INT token_count
-        JSONB chunk_metadata
+        int id PK
+        int document_id FK
+        int chunk_index
+        string content
+        vector embedding
+        int token_count
+        jsonb chunk_metadata
     }
 
     tasks {
-        INT id
-        TEXT title
-        TEXT task_type
-        INT assigned_to
-        INT assigned_by
-        BOOL is_completed
-        TIMESTAMP completed_at
+        int id PK
+        string title
+        string task_type
+        int assigned_to FK
+        int assigned_by FK
+        boolean is_completed
+        timestamp completed_at
     }
 
     chat_messages {
-        INT id
-        INT user_id
-        TEXT user_question
-        TEXT ai_response
+        int id PK
+        int user_id FK
+        string user_question
+        string ai_response
     }
 ```
-
----
 
 ## The Three RAG Pillars
 
