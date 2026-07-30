@@ -299,7 +299,44 @@ Pillar C — Vector RAG (pgvector)
 
 - [ ] Frontend with React (Figma design)
 - [ ] pytest automated tests
+- [ ] Docker deployment
+- [ ] Local model support (ollama + sentence-transformers) for sensitive documents
+---
+## Privacy & Sensitive Data
 
+OnboardGuide AI currently sends document chunks to the OpenAI API for embedding and chat completion.
+This is suitable for general company knowledge (policies, handbooks, project guidelines).
+
+For sensitive data that must not leave the internal network, the planned approach is a **local model deployment**:
+
+### Local Embeddings + Local LLM (fully offline)
+
+```
+Document → local embedding model     ← sentence-transformers
+         → pgvector stores vectors   ← same PostgreSQL
+         → ollama answers locally    ← no data leaves network
+```
+
+**Tools:**
+- `ollama` – run llama3, mistral, phi3 locally on your own server
+- `sentence-transformers` – local embeddings without OpenAI
+- Everything stays on your own infrastructure
+
+### Planned Implementation
+
+A `is_sensitive` flag on the `documents` table will control routing:
+
+```python
+if document.is_sensitive:
+    embedding = local_embed(chunk)    # sentence-transformers (offline)
+else:
+    embedding = openai_embed(chunk)   # OpenAI API (current)
+```
+
+Sensitive documents (salary data, customer contracts, internal strategies)
+never leave the internal network. General onboarding content continues
+to use the faster OpenAI pipeline.
+---
 ## About
 
 **1:1 GenAI Mentoring Program**
