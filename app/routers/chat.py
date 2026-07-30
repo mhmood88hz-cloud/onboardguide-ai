@@ -25,7 +25,7 @@ async def ask_onboarding_guide(
              f"Mitarbeiter stellt eine Frage: '{request.question[:60]}...'")
     log_step("Main", "Security",
              "get_current_user()",
-             "x-user-id Header wird extrahiert. Gibt nur int zurück – kein DB-Zugriff.")
+             "JWT Token aus Authorization Header dekodiert. Gibt user_id als int zurück – kein DB-Zugriff.")
     log_step("Security", "Router",
              "Weiterleitung zu chat.py",
              "load_current_user() lädt Benutzer-Objekt mit bestehender Session.")
