@@ -286,21 +286,33 @@ Pillar C — Vector RAG (pgvector)
 
 ### ✅ Done
 
+- [x] Initial project setup (DB, Backend, Swagger UI)
+- [x] SQLAlchemy models & Pydantic schemas
+- [x] Role system (Verwaltung / Leader / Mitarbeiter)
+- [x] Admin token authentication (first implementation)
+- [x] User registration & deletion (Verwaltung only)
+- [x] Document upload with role-based access control
+- [x] Task management with ownership validation (RBAC)
+- [x] OpenAI integration (gpt-4o-mini / gpt-5-mini)
+- [x] Three prompt engineering pillars (History · Context · RAG)
+- [x] Structured Outputs for task explainer
 - [x] MVC modularization (784 → 35 lines main.py)
-- [x] RAG with pgvector + chunking (text-embedding-3-small)
-- [x] JWT authentication (login / register / change-password)
-- [x] Role-based access control (Verwaltung / Leader / Mitarbeiter)
 - [x] Live Trace Simulator with WebSocket (auto-animation)
-- [x] Model comparison (gpt-4o-mini vs gpt-5-mini — time, tokens, cost)
-- [x] Structured Outputs (task explainer)
-- [x] Password change / reset endpoints
+- [x] RAG upgraded to pgvector + chunking (text-embedding-3-small)
+- [x] Model comparison with metrics (time, tokens, cost)
+- [x] **JWT authentication** — replaced admin token after security review
+  - Admin token: anyone who knew the token could act as any user
+  - JWT: requires real login, cryptographically signed, role verified
+- [x] Password change & reset endpoints
+- [x] README with Mermaid architecture + ER diagrams
 
 ### 🔜 Planned
 
-- [ ] Frontend with React (Figma design)
+- [ ] Frontend with React (Figma design first)
 - [ ] pytest automated tests
-- [ ] Docker deployment
 - [ ] Local model support (ollama + sentence-transformers) for sensitive documents
+- [ ] Alembic database migrations
+- [ ] Docker containerization
 ---
 ## Privacy & Sensitive Data
 
