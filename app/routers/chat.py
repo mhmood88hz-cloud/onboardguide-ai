@@ -124,7 +124,8 @@ async def explain_task_personalized(
              "Mitarbeiter möchte eine Aufgabe erklärt bekommen.")
     log_step("Main", "Security",
              "get_current_user()",
-             "x-user-id Header extrahiert. Kein DB-Zugriff in get_current_user.")
+             "JWT Token aus Authorization Header wird dekodiert. "
+             "Gibt user_id als int zurück – kein DB-Zugriff.")
     log_step("Security", "Router",
              "Weiterleitung zu chat.py",
              "load_current_user() lädt Benutzer mit bestehender Session.")

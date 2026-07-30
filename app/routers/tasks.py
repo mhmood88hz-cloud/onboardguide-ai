@@ -60,7 +60,8 @@ async def complete_task(
              "Benutzer möchte eine Aufgabe abschließen. x-user-id Header mitgeschickt.")
     log_step("Main", "Security",
              "get_current_user()",
-             "Nur Header-Extraktion – kein DB-Zugriff. Gibt int zurück.")
+             "JWT Token aus Authorization Header wird dekodiert. "
+             "Gibt user_id als int zurück – kein DB-Zugriff.")
     log_step("Security", "Router",
              "Weiterleitung zu tasks.py",
              "load_current_user() lädt Benutzer-Objekt mit bestehender Session.")
