@@ -4,10 +4,10 @@ import client from '../api/client';
 
 // ── Passwort ändern Modal ─────────────────────────────────────────────────
 function ChangePwModal({ onClose }) {
-  const [oldPw,    setOldPw]    = useState('');
-  const [newPw,    setNewPw]    = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [msg,      setMsg]      = useState('');
+  const [oldPw,   setOldPw]   = useState('');
+  const [newPw,   setNewPw]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState('');
 
   const handle = async () => {
     if (!oldPw || !newPw) { setMsg('Bitte alle Felder ausfüllen.'); return; }
@@ -20,9 +20,7 @@ function ChangePwModal({ onClose }) {
       setTimeout(onClose, 1500);
     } catch {
       setMsg('❌ Altes Passwort falsch.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -33,16 +31,12 @@ function ChangePwModal({ onClose }) {
           <button style={m.close} onClick={onClose}>✕</button>
         </div>
         <label style={m.label}>Aktuelles Passwort</label>
-        <input style={m.input} type="password" value={oldPw}
-               onChange={e => setOldPw(e.target.value)} />
+        <input style={m.input} type="password" value={oldPw} onChange={e => setOldPw(e.target.value)} />
         <label style={m.label}>Neues Passwort</label>
-        <input style={m.input} type="password" value={newPw}
-               onChange={e => setNewPw(e.target.value)} />
+        <input style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
         {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
-          <button style={m.btn} onClick={handle} disabled={loading}>
-            {loading ? 'Wird gespeichert...' : 'Ändern'}
-          </button>
+          <button style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gespeichert...' : 'Ändern'}</button>
           <button style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
       </div>
@@ -50,14 +44,14 @@ function ChangePwModal({ onClose }) {
   );
 }
 
-// ── Passwort zurücksetzen Modal (Verwaltung) ──────────────────────────────
+// ── Passwort zurücksetzen Modal ───────────────────────────────────────────
 function ResetPwModal({ member, onClose }) {
   const [newPw,   setNewPw]   = useState('');
   const [loading, setLoading] = useState(false);
   const [msg,     setMsg]     = useState('');
 
   const handle = async () => {
-    if (!newPw) { setMsg('Bitte neues Passwort eingeben.'); return; }
+    if (!newPw) { setMsg('Bitte Passwort eingeben.'); return; }
     setLoading(true);
     try {
       await client.post('/api/auth/reset-password', {
@@ -67,9 +61,7 @@ function ResetPwModal({ member, onClose }) {
       setTimeout(onClose, 1500);
     } catch {
       setMsg('❌ Fehler beim Zurücksetzen.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -83,12 +75,95 @@ function ResetPwModal({ member, onClose }) {
           Neues Passwort für <b style={{color:'#E2E8F0'}}>{member.username}</b>
         </p>
         <label style={m.label}>Neues Passwort</label>
-        <input style={m.input} type="password" value={newPw}
-               onChange={e => setNewPw(e.target.value)} />
+        <input style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
         {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
+          <button style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gesetzt...' : 'Zurücksetzen'}</button>
+          <button style={m.cancel} onClick={onClose}>Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Neuer Benutzer Modal (nur Verwaltung) ─────────────────────────────────
+function NewUserModal({ onClose, onCreated }) {
+  const [form, setForm] = useState({
+    username: '', email: '', password: '',
+    user_role: 'Mitarbeiter', department: '',
+    assigned_project: '', reports_to: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState('');
+
+  const set = (k, v) => setForm(f => ({...f, [k]: v}));
+
+  const handle = async () => {
+    if (!form.username || !form.email || !form.password) {
+      setMsg('Benutzername, E-Mail und Passwort sind Pflichtfelder.'); return;
+    }
+    setLoading(true);
+    try {
+      await client.post('/api/auth/register', {
+        username:         form.username,
+        email:            form.email,
+        password:         form.password,
+        user_role:        form.user_role,
+        department:       form.department   || null,
+        assigned_project: form.assigned_project || null,
+        reports_to:       form.reports_to   ? parseInt(form.reports_to) : null,
+      });
+      setMsg(`✅ Benutzer '${form.username}' erstellt.`);
+      setTimeout(() => { onCreated(); onClose(); }, 1200);
+    } catch (err) {
+      setMsg('❌ ' + (err.response?.data?.detail || 'Fehler beim Erstellen.'));
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={m.overlay}>
+      <div style={{...m.modal, maxWidth:'480px', maxHeight:'90vh', overflowY:'auto'}}>
+        <div style={m.header}>
+          <h2 style={{color:'#E2E8F0', margin:0}}>Neuer Benutzer</h2>
+          <button style={m.close} onClick={onClose}>✕</button>
+        </div>
+
+        <label style={m.label}>Benutzername *</label>
+        <input style={m.input} placeholder="z.B. max_mueller"
+               value={form.username} onChange={e => set('username', e.target.value)} />
+
+        <label style={m.label}>E-Mail *</label>
+        <input style={m.input} placeholder="max@firma.de" type="email"
+               value={form.email} onChange={e => set('email', e.target.value)} />
+
+        <label style={m.label}>Passwort *</label>
+        <input style={m.input} type="password" placeholder="Mindestens 6 Zeichen"
+               value={form.password} onChange={e => set('password', e.target.value)} />
+
+        <label style={m.label}>Rolle</label>
+        <select style={m.input} value={form.user_role} onChange={e => set('user_role', e.target.value)}>
+          <option value="Mitarbeiter">Mitarbeiter</option>
+          <option value="Leader">Leader</option>
+          <option value="Verwaltung">Verwaltung</option>
+        </select>
+
+        <label style={m.label}>Abteilung</label>
+        <input style={m.input} placeholder="z.B. IT, Marketing, HR"
+               value={form.department} onChange={e => set('department', e.target.value)} />
+
+        <label style={m.label}>Projekt</label>
+        <input style={m.input} placeholder="z.B. Alpha-Projekt"
+               value={form.assigned_project} onChange={e => set('assigned_project', e.target.value)} />
+
+        <label style={m.label}>Leader ID (reports_to)</label>
+        <input style={m.input} placeholder="ID des direkten Leaders"
+               value={form.reports_to} onChange={e => set('reports_to', e.target.value)} />
+
+        {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
+
+        <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
           <button style={m.btn} onClick={handle} disabled={loading}>
-            {loading ? 'Wird gesetzt...' : 'Zurücksetzen'}
+            {loading ? 'Wird erstellt...' : 'Benutzer anlegen'}
           </button>
           <button style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
@@ -99,48 +174,65 @@ function ResetPwModal({ member, onClose }) {
 
 // ── Neue Aufgabe Modal ────────────────────────────────────────────────────
 function NewTaskModal({ team, onClose, onCreated }) {
-  const userId               = localStorage.getItem('user_id');
-  const [title,      setTitle]      = useState('');
-  const [taskType,   setTaskType]   = useState('Onboarding');
-  const [assignedTo, setAssignedTo] = useState('');
-  const [loading,    setLoading]    = useState(false);
+  const userId = localStorage.getItem('user_id');
+  const [form, setForm] = useState({
+    title: '', description: '', task_type: 'Onboarding',
+    project_name: '', assigned_to: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const set = (k, v) => setForm(f => ({...f, [k]: v}));
 
   const handle = async () => {
-    if (!title || !assignedTo) { alert('Bitte alle Felder ausfüllen.'); return; }
+    if (!form.title || !form.assigned_to) {
+      alert('Titel und Mitarbeiter sind Pflichtfelder.'); return;
+    }
     setLoading(true);
     try {
       await client.post('/api/tasks', {
-        title,
-        task_type:   taskType,
-        assigned_to: parseInt(assignedTo),
-        assigned_by: parseInt(userId),
+        title:        form.title,
+        description:  form.description  || null,
+        task_type:    form.task_type,
+        project_name: form.project_name || null,
+        assigned_to:  parseInt(form.assigned_to),
+        assigned_by:  parseInt(userId),
       });
       onCreated();
       onClose();
     } catch {
-      alert('Fehler beim Erstellen.');
-    } finally {
-      setLoading(false);
-    }
+      alert('Fehler beim Erstellen der Aufgabe.');
+    } finally { setLoading(false); }
   };
 
   return (
     <div style={m.overlay}>
-      <div style={m.modal}>
+      <div style={{...m.modal, maxWidth:'480px'}}>
         <div style={m.header}>
           <h2 style={{color:'#E2E8F0', margin:0}}>Neue Aufgabe erstellen</h2>
           <button style={m.close} onClick={onClose}>✕</button>
         </div>
-        <label style={m.label}>Titel</label>
+
+        <label style={m.label}>Titel *</label>
         <input style={m.input} placeholder="z.B. VPN einrichten"
-               value={title} onChange={e => setTitle(e.target.value)} />
+               value={form.title} onChange={e => set('title', e.target.value)} />
+
+        <label style={m.label}>Beschreibung</label>
+        <textarea style={{...m.input, height:'80px', resize:'vertical'}}
+                  placeholder="Was muss genau gemacht werden?"
+                  value={form.description} onChange={e => set('description', e.target.value)} />
+
         <label style={m.label}>Typ</label>
-        <select style={m.input} value={taskType} onChange={e => setTaskType(e.target.value)}>
+        <select style={m.input} value={form.task_type} onChange={e => set('task_type', e.target.value)}>
           <option value="Onboarding">Onboarding</option>
           <option value="Projekt">Projekt</option>
         </select>
-        <label style={m.label}>Mitarbeiter</label>
-        <select style={m.input} value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
+
+        <label style={m.label}>Projektname</label>
+        <input style={m.input} placeholder="z.B. Alpha-Projekt (optional)"
+               value={form.project_name} onChange={e => set('project_name', e.target.value)} />
+
+        <label style={m.label}>Mitarbeiter *</label>
+        <select style={m.input} value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)}>
           <option value="">Bitte auswählen</option>
           {team.map(u => (
             <option key={u.id} value={u.id}>
@@ -148,9 +240,10 @@ function NewTaskModal({ team, onClose, onCreated }) {
             </option>
           ))}
         </select>
+
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
           <button style={m.btn} onClick={handle} disabled={loading}>
-            {loading ? 'Wird erstellt...' : 'Erstellen'}
+            {loading ? 'Wird erstellt...' : 'Aufgabe erstellen'}
           </button>
           <button style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
@@ -161,18 +254,18 @@ function NewTaskModal({ team, onClose, onCreated }) {
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const navigate              = useNavigate();
-  const username              = localStorage.getItem('username');
-  const role                  = localStorage.getItem('role');
-  const userId                = localStorage.getItem('user_id');
+  const navigate  = useNavigate();
+  const username  = localStorage.getItem('username');
+  const role      = localStorage.getItem('role');
+  const userId    = localStorage.getItem('user_id');
 
-  const [tasks,       setTasks]       = useState([]);
-  const [team,        setTeam]        = useState([]);
-  const [loading,     setLoading]     = useState(true);
+  const [tasks,   setTasks]   = useState([]);
+  const [team,    setTeam]    = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Modals
   const [showChangePw,  setShowChangePw]  = useState(false);
   const [resetMember,   setResetMember]   = useState(null);
+  const [showNewUser,   setShowNewUser]   = useState(false);
   const [showNewTask,   setShowNewTask]   = useState(false);
 
   const loadTasks = () => {
@@ -185,12 +278,10 @@ export default function Dashboard() {
   const loadTeam = () => {
     if (role === 'Leader') {
       client.get(`/api/tasks/leader/progress?leader_id=${userId}`)
-        .then(res => setTeam(res.data))
-        .catch(err => console.error(err));
+        .then(res => setTeam(res.data)).catch(console.error);
     } else if (role === 'Verwaltung') {
       client.get('/api/users')
-        .then(res => setTeam(res.data))
-        .catch(err => console.error(err));
+        .then(res => setTeam(res.data)).catch(console.error);
     }
   };
 
@@ -206,14 +297,7 @@ export default function Dashboard() {
     try {
       await client.delete(`/api/users/${memberId}`);
       loadTeam();
-    } catch {
-      alert('Fehler beim Löschen.');
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
+    } catch { alert('Fehler beim Löschen.'); }
   };
 
   const canManageTeam = role === 'Leader' || role === 'Verwaltung';
@@ -248,10 +332,17 @@ export default function Dashboard() {
             <h1 style={s.welcome}>Willkommen zurück, {username}! 👋</h1>
             <p style={s.subtitle}>Lass uns da weitermachen, wo du aufgehört hast.</p>
           </div>
-          <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+          <div style={{display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap'}}>
             <div style={s.dayBadge}>📅 Onboarding läuft</div>
+            {role === 'Verwaltung' && (
+              <button style={s.newUserBtn} onClick={() => setShowNewUser(true)}>
+                👤 Neuer Benutzer
+              </button>
+            )}
             <button style={s.pwBtn} onClick={() => setShowChangePw(true)}>🔑 Passwort</button>
-            <button style={s.logoutBtn} onClick={handleLogout}>Ausloggen</button>
+            <button style={s.logoutBtn} onClick={() => { localStorage.clear(); navigate('/login'); }}>
+              Ausloggen
+            </button>
           </div>
         </div>
 
@@ -275,7 +366,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Team Block – Leader + Verwaltung */}
+        {/* Team Block */}
         {canManageTeam && (
           <div style={s.card}>
             <div style={s.cardHeader}>
@@ -293,7 +384,7 @@ export default function Dashboard() {
             {team.length === 0 ? (
               <p style={{color:'#64748B'}}>Keine Mitarbeiter gefunden.</p>
             ) : team.map(member => {
-              const p = member.progress_percent || 0;
+              const p   = member.progress_percent || 0;
               const col = p >= 75 ? '#34D399' : p >= 40 ? '#1E40AF' : '#F59E0B';
               return (
                 <div key={member.id} style={s.memberRow}>
@@ -314,29 +405,17 @@ export default function Dashboard() {
                       <div style={{...s.progressFill, width:`${p}%`, background:col}} />
                     </div>
                   </div>
-
-                  {/* Aktionen */}
                   <div style={{display:'flex', gap:'6px'}}>
-                    <button
-                      style={s.viewBtn}
-                      onClick={() => navigate(`/tasks?user_id=${member.id}&name=${member.username}`)}
-                      title="Aufgaben anzeigen"
-                    >
+                    <button style={s.viewBtn}
+                      onClick={() => navigate(`/tasks?user_id=${member.id}&name=${member.username}`)}>
                       →
                     </button>
-                    <button
-                      style={s.resetPwBtn}
-                      onClick={() => setResetMember(member)}
-                      title="Passwort zurücksetzen"
-                    >
+                    <button style={s.resetPwBtn} onClick={() => setResetMember(member)} title="Passwort zurücksetzen">
                       🔑
                     </button>
                     {role === 'Verwaltung' && (
-                      <button
-                        style={s.deleteBtn}
-                        onClick={() => handleDelete(member.id, member.username)}
-                        title="Benutzer löschen"
-                      >
+                      <button style={s.deleteBtn}
+                        onClick={() => handleDelete(member.id, member.username)} title="Löschen">
                         🗑️
                       </button>
                     )}
@@ -353,50 +432,42 @@ export default function Dashboard() {
             <h2 style={s.cardTitle}>Deine Aufgaben</h2>
             <span style={s.badge}>{total - completed} verbleibend</span>
           </div>
-
           {loading ? (
             <p style={{color:'#64748B', padding:'16px 0'}}>Laden...</p>
           ) : tasks.length === 0 ? (
             <p style={{color:'#64748B', padding:'16px 0'}}>Keine Aufgaben vorhanden.</p>
-          ) : (
-            tasks.slice(0, 5).map(task => (
-              <div key={task.id} style={{
-                ...s.taskRow,
-                ...(task === next ? s.taskActive : {}),
-              }}>
-                <span style={task.is_completed ? s.checkDone : s.checkOpen}>
-                  {task.is_completed ? '✓' : '○'}
-                </span>
-                <div style={{flex:1}}>
-                  <div style={{
-                    color: task.is_completed ? '#64748B' : '#E2E8F0',
-                    textDecoration: task.is_completed ? 'line-through' : 'none',
-                    fontWeight:'500', fontSize:'15px',
-                  }}>
-                    {task.title}
-                  </div>
-                  {task === next && (
-                    <div style={{color:'#64748B', fontSize:'12px', marginTop:'2px'}}>
-                      {task.task_type}
-                    </div>
-                  )}
+          ) : tasks.slice(0, 5).map(task => (
+            <div key={task.id} style={{...s.taskRow, ...(task === next ? s.taskActive : {})}}>
+              <span style={task.is_completed ? s.checkDone : s.checkOpen}>
+                {task.is_completed ? '✓' : '○'}
+              </span>
+              <div style={{flex:1}}>
+                <div style={{
+                  color: task.is_completed ? '#64748B' : '#E2E8F0',
+                  textDecoration: task.is_completed ? 'line-through' : 'none',
+                  fontWeight:'500', fontSize:'15px',
+                }}>
+                  {task.title}
                 </div>
-                {task.is_completed && <span style={s.doneBadge}>erledigt</span>}
-                {!task.is_completed && task === next && (
-                  <>
-                    <span style={s.activeBadge}>in Bearbeitung</span>
-                    <button style={s.continueBtn} onClick={() => navigate('/tasks')}>Fortsetzen</button>
-                  </>
-                )}
-                {!task.is_completed && task !== next && (
-                  <>
-                    <span style={s.openBadge}>offen</span>
-                    <button style={s.startBtn} onClick={() => navigate('/tasks')}>Starten</button>
-                  </>
+                {task === next && task.description && (
+                  <div style={{color:'#64748B', fontSize:'12px', marginTop:'2px'}}>{task.description}</div>
                 )}
               </div>
-            ))
-          )}
+              {task.is_completed && <span style={s.doneBadge}>erledigt</span>}
+              {!task.is_completed && task === next && (
+                <>
+                  <span style={s.activeBadge}>in Bearbeitung</span>
+                  <button style={s.continueBtn} onClick={() => navigate('/tasks')}>Fortsetzen</button>
+                </>
+              )}
+              {!task.is_completed && task !== next && (
+                <>
+                  <span style={s.openBadge}>offen</span>
+                  <button style={s.startBtn} onClick={() => navigate('/tasks')}>Starten</button>
+                </>
+              )}
+            </div>
+          ))}
           {tasks.length > 5 && (
             <div style={{padding:'14px 0', color:'#1E40AF', cursor:'pointer', fontSize:'14px', textAlign:'center'}}
                  onClick={() => navigate('/tasks')}>
@@ -408,14 +479,9 @@ export default function Dashboard() {
 
       {/* Modals */}
       {showChangePw && <ChangePwModal onClose={() => setShowChangePw(false)} />}
-      {resetMember  && <ResetPwModal  member={resetMember} onClose={() => setResetMember(null)} />}
-      {showNewTask  && (
-        <NewTaskModal
-          team={team}
-          onClose={() => setShowNewTask(false)}
-          onCreated={loadTasks}
-        />
-      )}
+      {resetMember  && <ResetPwModal member={resetMember} onClose={() => setResetMember(null)} />}
+      {showNewUser  && <NewUserModal onClose={() => setShowNewUser(false)} onCreated={loadTeam} />}
+      {showNewTask  && <NewTaskModal team={team} onClose={() => setShowNewTask(false)} onCreated={loadTasks} />}
     </div>
   );
 }
@@ -434,6 +500,7 @@ const s = {
   welcome:        { color:'#E2E8F0', fontSize:'32px', fontWeight:'700', margin:'0 0 6px' },
   subtitle:       { color:'#64748B', margin:0, fontSize:'15px' },
   dayBadge:       { background:'#1E293B', color:'#7DD3FC', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
+  newUserBtn:     { background:'#1E293B', color:'#A78BFA', border:'1px solid #4C1D95', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   pwBtn:          { background:'#1E293B', color:'#94A3B8', border:'1px solid #334155', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' },
   logoutBtn:      { background:'#EF4444', color:'#fff', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
   card:           { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', padding:'24px', marginBottom:'24px' },
@@ -463,7 +530,7 @@ const s = {
 
 const m = {
   overlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
-  modal:   { background:'#10192B', border:'1px solid #1E293B', borderRadius:'16px', padding:'32px', width:'420px', boxSizing:'border-box' },
+  modal:   { background:'#10192B', border:'1px solid #1E293B', borderRadius:'16px', padding:'32px', width:'100%', maxWidth:'440px', boxSizing:'border-box' },
   header:  { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' },
   close:   { background:'none', border:'none', color:'#64748B', fontSize:'20px', cursor:'pointer' },
   label:   { color:'#94A3B8', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
