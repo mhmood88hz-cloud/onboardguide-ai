@@ -1,13 +1,22 @@
 import json
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
+from app.schemas import UserResponse
 from app.security import require_verwaltung
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
 
-router = APIRouter(prefix="/api/users", tags=["Users"])
+router = APIRouter(prefix="/api/users", tags=["Users"])  # ← muss zuerst kommen
+
+
+@router.get("", response_model=List[UserResponse],
+            dependencies=[Depends(require_verwaltung)])
+def get_all_users(db: Session = Depends(get_db)):
+    """Verwaltung sieht alle Benutzer."""
+    return db.query(User).all()
 
 
 @router.delete("/{user_id}", status_code=200,
