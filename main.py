@@ -33,7 +33,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],  # ← React URL
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-Workflow-Trace"],
