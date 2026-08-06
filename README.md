@@ -23,14 +23,20 @@ Upload company policies, project plans, and handbooks. OnboardGuide extracts rel
 
 ## Screenshots
 
-| Login | Dashboard | Chat |
-|---|---|---|
-| Dark blue login card with JWT auth | Progress bar + task list + team overview | RAG chat with similarity scores |
+### Login
+![Login](docs/screenshots/onboardguide-ai-login.png)
 
-| Tasks | Documents | Simulator |
-|---|---|---|
-| Task list with Erklären + Erledigen | Document table with chunk stats | Live MVC trace via WebSocket |
+### Dashboard
+![Dashboard](docs/screenshots/onboardguide-dashboard.png)
 
+### Chat
+![Chat](docs/screenshots/onboardguide-chat.png)
+
+### Tasks
+![Tasks](docs/screenshots/onboardguide-tasks.png)
+
+### Dokumente
+![Documents](docs/screenshots/onboardguide-documents-screen.png)
 ---
 
 ## Tech Stack
