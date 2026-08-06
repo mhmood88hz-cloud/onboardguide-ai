@@ -13,12 +13,7 @@ router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """
-    Login endpoint – returns JWT token.
 
-    Replaces x-user-id header. After login:
-    Use Authorization: Bearer <token> for all protected endpoints.
-    """
     # Find user by username
     user = db.query(User).filter(User.username == request.username).first()
     if not user:
