@@ -33,7 +33,7 @@ export default function Login() {
       <div style={s.card}>
         {/* Logo */}
         <div style={s.logoRow}>
-          <span style={s.logoIcon}>🤖</span>
+          <span style={s.logoIcon}>➜]</span>
           <span style={s.logoText}>OnboardGuide AI</span>
         </div>
         <p style={s.tagline}>Your intelligent onboarding companion</p>
