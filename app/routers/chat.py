@@ -12,6 +12,32 @@ from app.services.ws_manager import manager
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
 
+@router.get("/history")
+def get_chat_history(
+    db:      Session = Depends(get_db),
+    user_id: int     = Depends(get_current_user)
+):
+    """
+    Lädt die letzten 20 Chat-Nachrichten des Users.
+    Wird beim Öffnen der Chat-Seite aufgerufen damit
+    der Verlauf sichtbar bleibt.
+    """
+    messages = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.user_id == user_id)
+        .order_by(ChatMessage.created_at.asc())
+        .limit(20)
+        .all()
+    )
+    return [
+        {
+            "user_question": msg.user_question,
+            "ai_response":   msg.ai_response,
+        }
+        for msg in messages
+    ]
+
+
 @router.post("/ask", response_model=ChatResponse)
 async def ask_onboarding_guide(
     request:  ChatRequest,
@@ -35,17 +61,16 @@ async def ask_onboarding_guide(
     log_step("Router", "AIService",
              "run_rag_chat() gestartet",
              f"ai_service.py übernimmt für '{current_user.username}' "
-             f"(Rolle: {current_user.user_role}, Abteilung: {current_user.department or 'Allgemein'}).")
+             f"(Rolle: {current_user.user_role}).")
     log_step("AIService", "PostgreSQL",
              "Säule C: Vektor-Ähnlichkeitssuche",
-             "Frage wird in Einbettung umgewandelt → pgvector Cosine-Suche → "
-             "Top-3 relevanteste Chunks werden gefunden.")
+             "Frage → Einbettung → pgvector Cosine-Suche → Top-3 relevanteste Chunks.")
     log_step("AIService", "Database",
              "Säule A: Gesprächsverlauf laden",
              "Letzte 5 ChatMessages aus der Datenbank geladen.")
     log_step("AIService", "OpenAI",
-             "Säule B + API-Aufruf",
-             "System-Prompt (Säule B) + Verlauf + RAG-Chunks → OpenAI.")
+             "Säule B + Live Context + API-Aufruf",
+             "System-Prompt + Live DB-Daten + Verlauf + RAG-Chunks → OpenAI.")
 
     try:
         if request.compare_models:
@@ -69,8 +94,7 @@ async def ask_onboarding_guide(
     )
     log_step("OpenAI", "AIService",
              "KI-Antwort erhalten",
-             f"Antwort basiert auf {len(chunk_stats)} Chunks. "
-             f"Scores: {chunk_info or 'keine'}")
+             f"Antwort basiert auf {len(chunk_stats)} Chunks. Scores: {chunk_info or 'keine'}")
 
     db.add(ChatMessage(
         user_id=current_user.id,
@@ -81,8 +105,7 @@ async def ask_onboarding_guide(
 
     log_step("AIService", "PostgreSQL",
              "Gesprächsverlauf gespeichert",
-             "ChatMessage in chat_messages-Tabelle gespeichert. "
-             "Für die nächste History-Abfrage verfügbar.")
+             "ChatMessage in chat_messages-Tabelle gespeichert.")
     log_step("PostgreSQL", "Schema",
              "ChatResponse validieren",
              "Pydantic ChatResponse: Frage, Antwort, Quellen, Chunk-Scores.")
@@ -124,8 +147,7 @@ async def explain_task_personalized(
              "Mitarbeiter möchte eine Aufgabe erklärt bekommen.")
     log_step("Main", "Security",
              "get_current_user()",
-             "JWT Token aus Authorization Header wird dekodiert. "
-             "Gibt user_id als int zurück – kein DB-Zugriff.")
+             "JWT Token dekodiert – kein DB-Zugriff.")
     log_step("Security", "Router",
              "Weiterleitung zu chat.py",
              "load_current_user() lädt Benutzer mit bestehender Session.")
@@ -144,11 +166,9 @@ async def explain_task_personalized(
 
     log_step("Router", "AIService",
              "run_task_explanation()",
-             f"Aufgabe '{db_task.title}' wird erklärt für "
-             f"'{current_user.username}' (Rolle: {current_user.user_role}).")
+             f"Aufgabe '{db_task.title}' wird erklärt für '{current_user.username}'.")
     log_step("AIService", "OpenAI",
              "Structured Outputs .parse()",
-             "beta.chat.completions.parse() mit TaskExplanationLLMResponse Schema. "
              "Modell muss exakt summary + steps + tools_and_tips zurückgeben.")
 
     try:
@@ -156,19 +176,14 @@ async def explain_task_personalized(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"OpenAI Fehler: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"OpenAI Fehler: {e}")
 
     log_step("OpenAI", "Schema",
              "Garantiertes JSON erhalten",
-             f"Felder können nicht fehlen. "
-             f"steps={len(parsed.steps)} Schritte, "
-             f"tools_and_tips={len(parsed.tools_and_tips)} Tipps.")
+             f"steps={len(parsed.steps)}, tools_and_tips={len(parsed.tools_and_tips)}.")
     log_step("Schema", "User",
              "TaskExplainEndpointResponse",
-             "Typisiertes Pydantic-Objekt – Frontend kann steps[0] direkt aufrufen.")
+             "Typisiertes Pydantic-Objekt zurückgegeben.")
 
     await manager.broadcast_trace(
         get_trace(),
