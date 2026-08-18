@@ -13,8 +13,13 @@ export default function Documents() {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle]       = useState('');
   const [category, setCategory] = useState('Allgemein');
+  const [newCategory, setNewCategory] = useState('');
+  const [users, setUsers]       = useState([]);
+  const [uploadedBy, setUploadedBy] = useState(userId);
   const [file, setFile]         = useState(null);
   const fileRef                 = useRef();
+
+  const BASE_CATEGORIES = ['Allgemein','IT','HR','Finanzen','Recht','Marketing','Alpha-Projekt'];
 
   const loadDocs = () => {
     client.get('/api/documents')
@@ -25,13 +30,24 @@ export default function Documents() {
 
   useEffect(() => { loadDocs(); }, []);
 
+  useEffect(() => {
+    if (role === 'Verwaltung') {
+      client.get('/api/users')
+        .then(res => setUsers(res.data))
+        .catch(err => console.error(err));
+    }
+  }, [role]);
+
   const handleUpload = async () => {
+    const finalCategory = category === '__new__' ? newCategory.trim() : category;
     if (!title || !file) { alert('Bitte Titel und Datei angeben.'); return; }
+    if (!finalCategory) { alert('Bitte eine Kategorie angeben.'); return; }
+
     setUploading(true);
     const form = new FormData();
     form.append('title', title);
-    form.append('category', category);
-    form.append('uploaded_by', userId);
+    form.append('category', finalCategory);
+    form.append('uploaded_by', uploadedBy);
     form.append('file', file);
 
     try {
@@ -41,6 +57,9 @@ export default function Documents() {
       setShowForm(false);
       setTitle('');
       setFile(null);
+      setCategory('Allgemein');
+      setNewCategory('');
+      setUploadedBy(userId);
       loadDocs();
     } catch {
       alert('Fehler beim Hochladen.');
@@ -111,8 +130,29 @@ export default function Documents() {
               value={category}
               onChange={e => setCategory(e.target.value)}
             >
-              {['Allgemein','IT','HR','Finanzen','Recht','Marketing','Alpha-Projekt'].map(c => (
+              {BASE_CATEGORIES.map(c => (
                 <option key={c} value={c}>{c}</option>
+              ))}
+              <option value="__new__">+ Neue Kategorie...</option>
+            </select>
+            {category === '__new__' && (
+              <input
+                style={s.input}
+                placeholder="Name der neuen Kategorie"
+                value={newCategory}
+                onChange={e => setNewCategory(e.target.value)}
+              />
+            )}
+            <select
+              style={s.input}
+              value={uploadedBy}
+              onChange={e => setUploadedBy(e.target.value)}
+            >
+              <option value={userId}>Automatisch: {username} (ich)</option>
+              {users.filter(u => String(u.id) !== String(userId)).map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.username} ({u.user_role}{u.assigned_project ? ` – ${u.assigned_project}` : ''})
+                </option>
               ))}
             </select>
             <input
