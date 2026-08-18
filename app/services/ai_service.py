@@ -16,7 +16,7 @@ COST_MAP = {
 
 SUPPORTED_TEMPERATURE = {
     "gpt-4o-mini": 0.4,
-    "gpt-5-mini":  0.4,
+    "gpt-5-mini":  1,  # gpt-5-mini only accepts the default temperature (1)
 }
 
 
@@ -110,11 +110,35 @@ def _build_rag_context(
 
 
 # ── LIVE CONTEXT ──────────────────────────────────────────────────────────
+def _format_member_block(member: User, db: Session) -> str:
+    """Eine Zeile pro Mitarbeiter mit Rolle, Fortschritt und den konkreten
+    offenen Aufgaben (nicht nur der Anzahl), damit gezielte Fragen wie
+    'welche Aufgabe hat lisa_schmidt' beantwortbar sind."""
+    from app.models import Task
+
+    open_tasks = db.query(Task).filter(
+        Task.assigned_to == member.id,
+        Task.is_completed == False
+    ).all()
+
+    line = (
+        f"- {member.username} (Rolle: {member.user_role}, "
+        f"Abteilung: {member.department or 'Allgemein'}): "
+        f"{member.progress_percent}% abgeschlossen, "
+        f"{len(open_tasks)} offene Aufgabe(n)"
+    )
+    if open_tasks:
+        titles = ", ".join(f"'{t.title}' ({t.task_type})" for t in open_tasks)
+        line += f" – {titles}"
+    return line + "\n"
+
+
 def _build_live_context(current_user: User, db: Session) -> str:
     """
     Lädt Live-Daten aus der DB:
     - Eigene offene Aufgaben
-    - Team-Fortschritt (nur für Leader)
+    - Team-Details (Leader: direkt unterstellte Mitarbeiter mit ihren Aufgaben)
+    - Firmenweite Übersicht (Verwaltung: alle Mitarbeiter mit ihren Aufgaben)
     Diese Daten verlassen das System nicht – kein Internet.
     """
     from app.models import Task
@@ -134,23 +158,24 @@ def _build_live_context(current_user: User, db: Session) -> str:
     else:
         context += f"\n{current_user.username} hat keine offenen Aufgaben.\n"
 
-    # Team-Fortschritt nur für Leader
+    # Team-Details nur für Leader: direkt unterstellte Mitarbeiter
     if current_user.user_role == "Leader":
         team = db.query(User).filter(
             User.reports_to == current_user.id
         ).all()
         if team:
-            context += f"\nTeam-Fortschritt:\n"
+            context += f"\nTeam von {current_user.username} ({len(team)} Mitarbeiter):\n"
             for member in team:
-                open_count = db.query(Task).filter(
-                    Task.assigned_to == member.id,
-                    Task.is_completed == False
-                ).count()
-                context += (
-                    f"- {member.username} ({member.department or 'Allgemein'}): "
-                    f"{member.progress_percent}% abgeschlossen, "
-                    f"{open_count} offene Aufgaben\n"
-                )
+                context += _format_member_block(member, db)
+
+    # Firmenweite Übersicht nur für Verwaltung: alle Mitarbeiter der Firma
+    if current_user.user_role == "Verwaltung":
+        all_users = db.query(User).all()
+        context += f"\nMitarbeiter in der Firma (gesamt: {len(all_users)}):\n"
+        for member in all_users:
+            if member.id == current_user.id:
+                continue
+            context += _format_member_block(member, db)
 
     return context
 
