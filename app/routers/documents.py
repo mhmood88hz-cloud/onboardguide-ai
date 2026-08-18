@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import User, Document
 from app.schemas import DocumentResponse
@@ -133,8 +133,9 @@ def get_documents(
 ):
     """Rollenbasierter Dokumentenzugriff."""
     current_user = load_current_user(user_id, db)
+    query = db.query(Document).options(joinedload(Document.chunks))
     if current_user.user_role == "Verwaltung":
-        return db.query(Document).all()
+        return query.all()
     allowed = {"Allgemein"}
     if current_user.user_role == "Leader":
         for m in db.query(User).filter(User.reports_to == current_user.id).all():
@@ -143,4 +144,4 @@ def get_documents(
     else:
         if current_user.department:       allowed.add(current_user.department)
         if current_user.assigned_project: allowed.add(current_user.assigned_project)
-    return db.query(Document).filter(Document.category.in_(allowed)).all()
+    return query.filter(Document.category.in_(allowed)).all()

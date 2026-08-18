@@ -41,6 +41,10 @@ class Document(Base):
     chunks = relationship("DocumentChunk", back_populates="document",
                           cascade="all, delete-orphan")
 
+    @property
+    def chunk_count(self) -> int:
+        return len(self.chunks)
+
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
