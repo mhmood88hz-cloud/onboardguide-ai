@@ -121,9 +121,12 @@ def _format_member_block(member: User, db: Session) -> str:
         Task.is_completed == False
     ).all()
 
+    joined = member.created_at.strftime("%d.%m.%Y") if member.created_at else "unbekannt"
+
     line = (
         f"- {member.username} (Rolle: {member.user_role}, "
-        f"Abteilung: {member.department or 'Allgemein'}): "
+        f"Abteilung: {member.department or 'Allgemein'}, "
+        f"hinzugefügt am: {joined}): "
         f"{member.progress_percent}% abgeschlossen, "
         f"{len(open_tasks)} offene Aufgabe(n)"
     )
