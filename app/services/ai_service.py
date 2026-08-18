@@ -16,7 +16,7 @@ COST_MAP = {
 
 SUPPORTED_TEMPERATURE = {
     "gpt-4o-mini": 0.4,
-    "gpt-5-mini":  1,
+    "gpt-5-mini":  0.4,
 }
 
 
