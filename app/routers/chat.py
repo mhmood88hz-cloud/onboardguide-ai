@@ -25,10 +25,11 @@ def get_chat_history(
     messages = (
         db.query(ChatMessage)
         .filter(ChatMessage.user_id == user_id)
-        .order_by(ChatMessage.created_at.asc())
+        .order_by(ChatMessage.created_at.desc())
         .limit(20)
         .all()
     )
+    messages.reverse()  # älteste zuerst für chronologische Anzeige im Chat
     return [
         {
             "user_question": msg.user_question,
