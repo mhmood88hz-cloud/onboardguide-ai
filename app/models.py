@@ -45,6 +45,10 @@ class Document(Base):
     def chunk_count(self) -> int:
         return len(self.chunks)
 
+    @property
+    def has_content(self) -> bool:
+        return self.content is not None
+
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 

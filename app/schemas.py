@@ -64,6 +64,7 @@ class DocumentResponse(BaseModel):
     filepath:    str
     uploaded_by: Optional[int]
     chunk_count: int
+    has_content: bool
     created_at:  datetime
     # content excluded – too large for list responses
     class Config:

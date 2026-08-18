@@ -216,11 +216,11 @@ export default function Documents() {
                 <div style={{flex:1, display:'flex', alignItems:'center', gap:'6px'}}>
                   <span style={{
                     width:'8px', height:'8px', borderRadius:'50%',
-                    background: doc.content ? '#34D399' : '#F59E0B',
+                    background: doc.has_content ? '#34D399' : '#F59E0B',
                     display:'inline-block'
                   }} />
                   <span style={{color:'#64748B', fontSize:'13px'}}>
-                    {doc.content ? 'Verarbeitet' : 'Kein Text'}
+                    {doc.has_content ? 'Verarbeitet' : 'Kein Text'}
                   </span>
                 </div>
               </div>
