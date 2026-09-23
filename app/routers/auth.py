@@ -1,6 +1,6 @@
 import json
 import re
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Organization
@@ -9,6 +9,7 @@ from app.schemas import (
     ChangePasswordRequest, ResetPasswordRequest, SignupRequest,
 )
 from app.security import require_verwaltung, hash_password, verify_password, create_access_token, get_current_user, load_current_user
+from app.services.rate_limit import limiter
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
 
@@ -21,15 +22,16 @@ def _slugify(name: str) -> str:
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(request: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
 
     # Find user by username
-    user = db.query(User).filter(User.username == request.username).first()
+    user = db.query(User).filter(User.username == body.username).first()
     if not user:
         raise HTTPException(status_code=401, detail="Benutzername oder Passwort falsch.")
 
     # Verify password
-    if not verify_password(request.password, user.password_hash):
+    if not verify_password(body.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Benutzername oder Passwort falsch.")
 
     # Create JWT token
@@ -51,32 +53,33 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/signup", response_model=TokenResponse, status_code=201)
-def signup(request: SignupRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def signup(request: Request, body: SignupRequest, db: Session = Depends(get_db)):
     """
     Self-Serve-Registrierung für eine neue Firma: legt die Organization an
     und macht den anfragenden Nutzer zu deren erstem Verwaltung-Account.
     Kein Login/Token nötig – das ist der Einstiegspunkt für neue Kunden.
     """
-    if db.query(User).filter(User.username == request.username).first():
+    if db.query(User).filter(User.username == body.username).first():
         raise HTTPException(status_code=400, detail="Benutzername bereits vergeben!")
-    if db.query(User).filter(User.email == request.email).first():
+    if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=400, detail="E-Mail bereits registriert!")
 
-    slug = base_slug = _slugify(request.organization_name)
+    slug = base_slug = _slugify(body.organization_name)
     suffix = 2
     while db.query(Organization).filter(Organization.slug == slug).first():
         slug = f"{base_slug}-{suffix}"
         suffix += 1
 
-    org = Organization(name=request.organization_name, slug=slug)
+    org = Organization(name=body.organization_name, slug=slug)
     db.add(org)
     db.flush()  # org.id verfügbar, ohne die Transaktion schon zu committen
 
     admin_user = User(
         organization_id=org.id,
-        username=request.username,
-        email=request.email,
-        password_hash=hash_password(request.password),
+        username=body.username,
+        email=body.email,
+        password_hash=hash_password(body.password),
         user_role="Verwaltung",
     )
     db.add(admin_user)

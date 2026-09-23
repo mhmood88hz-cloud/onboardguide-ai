@@ -255,6 +255,16 @@ ADMIN_TOKEN=your-admin-token
 CHUNK_SIZE=400
 CHUNK_OVERLAP=50
 TOP_K_CHUNKS=3
+
+# Cloudflare R2 (S3-compatible) — persistent storage for uploaded documents
+# and extracted PDF images. Required in production: Render's filesystem is
+# wiped on every redeploy/restart, so local disk storage loses all uploads.
+# If unset, the app falls back to local disk under uploads/ (fine for local
+# dev/tests, NOT fine for any real deployment).
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
+R2_BUCKET_NAME=onboardguide-documents
 ```
 
 ---
@@ -432,11 +442,16 @@ Planned: is_sensitive flag on documents table
 - [x] Docker containerization (backend, frontend, pgvector Postgres via `docker-compose.yml`)
 - [x] Apple-HIG-inspired glass UI (`frontend/src/theme.css`) applied across all pages
 - [x] Manual billing activation (no Stripe) — `POST /api/platform/organizations/{id}/activate|deactivate`, protected by `ADMIN_TOKEN`, with an optional expiry date. See "Billing" below.
+- [x] Persistent document/image storage via Cloudflare R2 (`app/services/storage_service.py`) — replaces local disk, which is wiped on every Render redeploy/restart. Falls back to local disk automatically when R2 env vars are unset (local dev/tests).
+- [x] Rate limiting on `/api/auth/login` (10/min) and `/api/auth/signup` (5/min) per IP via `slowapi`, to blunt brute-force/credential-stuffing attempts.
 
 ### 🔜 Planned
 
 - [ ] Local model support (ollama + sentence-transformers) for sensitive documents
 - [ ] Azure OpenAI private deployment for GDPR compliance
+- [ ] Legal pages (Impressum, Datenschutzerklärung, AGB)
+- [ ] Transactional email (welcome mail, self-service "forgot password")
+- [ ] Error tracking / uptime monitoring for backend + frontend
 - [ ] Production deployment (Railway / Render + Neon.tech), DNS under `onboardguide.leadspeak.de`
 
 ---

@@ -1,10 +1,10 @@
 import json
+import mimetypes
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Response
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models import User, Document, DocumentImage
@@ -13,12 +13,9 @@ from app.security import require_verwaltung, get_current_user, load_current_user
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
 from app.services.chunking_service import embed_document
+from app.services import storage_service
 
-router    = APIRouter(prefix="/api/documents", tags=["Documents"])
-UPLOAD_DIR  = Path("uploads")
-IMAGES_DIR  = UPLOAD_DIR / "images"
-UPLOAD_DIR.mkdir(exist_ok=True)
-IMAGES_DIR.mkdir(exist_ok=True)
+router = APIRouter(prefix="/api/documents", tags=["Documents"])
 
 # Bilder kleiner als das (Breite*Höhe) sind Bullet-Icons/Deko aus dem PDF-Layout,
 # keine echten Screenshots – die wollen wir nicht im Chat anzeigen.
@@ -93,10 +90,16 @@ def get_document_image(
         DocumentImage.id == image_id,
         DocumentImage.document_id == document_id
     ).first()
-    if not image or not Path(image.filepath).exists():
+    if not image:
         raise HTTPException(status_code=404, detail="Bild nicht gefunden!")
 
-    return FileResponse(image.filepath)
+    try:
+        image_bytes = storage_service.download_bytes(image.filepath)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Bild nicht gefunden!")
+
+    content_type = mimetypes.guess_type(image.filepath)[0] or "application/octet-stream"
+    return Response(content=image_bytes, media_type=content_type)
 
 
 @router.post("/upload", response_model=DocumentResponse, status_code=201)
@@ -135,13 +138,15 @@ async def upload_document(
     original_filename = Path(file.filename or "upload").name
     safe_original = re.sub(r"[^A-Za-z0-9._-]", "_", original_filename).strip("._")
     safe_filename = f"{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{safe_original or 'upload'}"
-    file_path     = UPLOAD_DIR / safe_filename
-    with open(file_path, "wb") as buffer:
-        buffer.write(file_bytes)
+    storage_key   = f"org_{current_user.organization_id}/documents/{safe_filename}"
+    storage_service.upload_bytes(
+        storage_key, file_bytes,
+        content_type=file.content_type or "application/octet-stream"
+    )
 
     log_step("Router", "Database",
-             "Datei auf Disk gespeichert",
-             f"Datei wurde lokal als '{safe_filename}' im uploads/-Ordner gesichert.")
+             "Datei in R2 gespeichert",
+             f"Datei wurde als '{storage_key}' im R2-Bucket gesichert (persistent, nicht an Render-Disk gebunden).")
 
     content_text  = None
     pdf_images    = []
@@ -163,7 +168,7 @@ async def upload_document(
 
     new_doc = Document(
         organization_id=current_user.organization_id,
-        title=title, filepath=str(file_path),
+        title=title, filepath=storage_key,
         content=content_text, category=category, uploaded_by=uploaded_by
     )
     db.add(new_doc)
@@ -179,22 +184,24 @@ async def upload_document(
     saved_images = 0
     for page_number, image_bytes, ext in pdf_images:
         image_filename = f"doc{new_doc.id}_p{page_number}_{saved_images}.{ext}"
-        image_path      = IMAGES_DIR / image_filename
+        image_key      = f"org_{current_user.organization_id}/images/{image_filename}"
         try:
-            with open(image_path, "wb") as buffer:
-                buffer.write(image_bytes)
+            storage_service.upload_bytes(
+                image_key, image_bytes,
+                content_type=mimetypes.guess_type(image_filename)[0] or "image/png"
+            )
         except Exception:
             continue
         db.add(DocumentImage(
             document_id=new_doc.id, page_number=page_number,
-            sequence=saved_images, filepath=str(image_path)
+            sequence=saved_images, filepath=image_key
         ))
         saved_images += 1
     if saved_images:
         db.commit()
         log_step("PostgreSQL", "PostgreSQL",
                  "Bilder gespeichert",
-                 f"{saved_images} Screenshot(s) aus der PDF in document_images gespeichert.")
+                 f"{saved_images} Screenshot(s) aus der PDF in R2 (document_images) gespeichert.")
 
     chunk_stats = {"chunks_created": 0}
     if content_text:

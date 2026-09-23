@@ -3,12 +3,15 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from pathlib import Path
 
 from app.database import get_db
 from app.routers import auth, users, tasks, documents, chat, ws, leave, platform
+from app.services.rate_limit import limiter
 from app.services.ws_manager import manager
 
 # Schema wird über Alembic-Migrationen verwaltet (siehe alembic/ + README).
@@ -32,6 +35,9 @@ app = FastAPI(
     version="1.5.0",
     lifespan=lifespan
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 DEFAULT_ORIGINS = [
     "http://localhost:3000",
