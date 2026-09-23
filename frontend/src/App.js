@@ -6,6 +6,7 @@ import Chat      from './pages/Chat';
 import Tasks     from './pages/Tasks';
 import Documents from './pages/Documents';
 import Absences  from './pages/Absences';
+import Admin     from './pages/Admin';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -23,6 +24,7 @@ function App() {
         <Route path="/tasks"     element={<PrivateRoute><Tasks /></PrivateRoute>} />
         <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
         <Route path="/abwesenheiten" element={<PrivateRoute><Absences /></PrivateRoute>} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*"          element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
