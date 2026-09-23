@@ -130,7 +130,7 @@ export default function Tasks() {
         {/* Neue Aufgabe Form */}
         {showNewTask && canManage && (
           <div className="gx-card" style={s.form}>
-            <h3 style={{color:'#E2E8F0', margin:'0 0 16px'}}>
+            <h3 style={{color:'#eef3f7', margin:'0 0 16px'}}>
               Neue Aufgabe für {viewName}
             </h3>
             <input
@@ -160,7 +160,7 @@ export default function Tasks() {
           <div style={s.progressHeader}>
             <span style={s.progressLabel}>Gesamtfortschritt</span>
             <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
-              <span style={{color:'#64748B', fontSize:'14px'}}>{completed} von {total} Aufgaben erledigt</span>
+              <span style={{color:'#8fa1ae', fontSize:'14px'}}>{completed} von {total} Aufgaben erledigt</span>
               <span style={s.progressPercent}>{progress}% abgeschlossen</span>
             </div>
           </div>
@@ -172,9 +172,9 @@ export default function Tasks() {
         {/* Tasks */}
         <div className="gx-card" style={s.card}>
           {loading ? (
-            <p style={{color:'#64748B'}}>Laden...</p>
+            <p style={{color:'#8fa1ae'}}>Laden...</p>
           ) : tasks.length === 0 ? (
-            <p style={{color:'#64748B'}}>Keine Aufgaben vorhanden.</p>
+            <p style={{color:'#8fa1ae'}}>Keine Aufgaben vorhanden.</p>
           ) : tasks.map(task => (
             <div key={task.id} className="gx-row" style={s.taskRow}>
               <span style={task.is_completed ? s.checkDone : s.checkOpen}>
@@ -182,7 +182,7 @@ export default function Tasks() {
               </span>
               <div style={{flex:1}}>
                 <span style={{
-                  color:          task.is_completed ? '#64748B' : '#E2E8F0',
+                  color:          task.is_completed ? '#8fa1ae' : '#eef3f7',
                   textDecoration: task.is_completed ? 'line-through' : 'none',
                   fontSize:'15px', fontWeight:'500'
                 }}>
@@ -191,8 +191,8 @@ export default function Tasks() {
               </div>
               <span style={{
                 ...s.typeBadge,
-                background: task.task_type === 'Projekt' ? '#2D1B6E' : '#1E293B',
-                color:      task.task_type === 'Projekt' ? '#A78BFA' : '#64748B',
+                background: task.task_type === 'Projekt' ? '#2D1B6E' : '#1a2732',
+                color:      task.task_type === 'Projekt' ? '#A78BFA' : '#8fa1ae',
               }}>
                 {task.task_type}
               </span>
@@ -217,27 +217,27 @@ export default function Tasks() {
         <div className="gx-modal-overlay" style={s.modal}>
           <div className="gx-modal" style={s.modalCard}>
             <div style={s.modalHeader}>
-              <h2 style={{color:'#E2E8F0', margin:0}}>
+              <h2 style={{color:'#eef3f7', margin:0}}>
                 {explain ? explain.task_title : 'Erklärung wird geladen...'}
               </h2>
               <button className="gx-btn" style={s.closeBtn} onClick={() => setExplain(null)}>✕</button>
             </div>
-            {explainLoading && <p style={{color:'#64748B'}}>Wird generiert...</p>}
+            {explainLoading && <p style={{color:'#8fa1ae'}}>Wird generiert...</p>}
             {explain && (
               <>
-                <p style={{color:'#94A3B8', marginBottom:'20px'}}>{explain.explanation.summary}</p>
-                <h3 style={{color:'#7DD3FC', marginBottom:'12px'}}>Schritte</h3>
+                <p style={{color:'#8fa1ae', marginBottom:'20px'}}>{explain.explanation.summary}</p>
+                <h3 style={{color:'#edb268', marginBottom:'12px'}}>Schritte</h3>
                 {explain.explanation.steps.map((step, i) => (
                   <div key={i} style={s.step}>
                     <span style={s.stepNum}>{i+1}</span>
-                    <span style={{color:'#E2E8F0'}}>{step}</span>
+                    <span style={{color:'#eef3f7'}}>{step}</span>
                   </div>
                 ))}
                 {explain.explanation.tools_and_tips?.length > 0 && (
                   <>
-                    <h3 style={{color:'#34D399', margin:'20px 0 12px'}}>Tools & Tipps</h3>
+                    <h3 style={{color:'#4caf6d', margin:'20px 0 12px'}}>Tools & Tipps</h3>
                     {explain.explanation.tools_and_tips.map((tip, i) => (
-                      <div key={i} style={{color:'#94A3B8', marginBottom:'8px'}}>💡 {tip}</div>
+                      <div key={i} style={{color:'#8fa1ae', marginBottom:'8px'}}>💡 {tip}</div>
                     ))}
                   </>
                 )}
@@ -251,42 +251,42 @@ export default function Tasks() {
 }
 
 const s = {
-  page:           { display:'flex', minHeight:'100vh', background:'#0A0E18', fontFamily:'Segoe UI, sans-serif' },
-  sidebar:        { width:'240px', background:'#10192B', borderRight:'1px solid #1E293B', display:'flex', flexDirection:'column', padding:'24px 0' },
-  logo:           { color:'#E2E8F0', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
-  navItem:        { color:'#64748B', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
-  navActive:      { color:'#E2E8F0', background:'#1E293B', borderRight:'3px solid #1E40AF' },
-  userInfo:       { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1E293B', marginTop:'auto' },
-  userName:       { color:'#E2E8F0', fontSize:'13px', fontWeight:'600' },
-  userRole:       { color:'#64748B', fontSize:'11px' },
+  page:           { display:'flex', minHeight:'100vh', background:'#0d141c', fontFamily:'Segoe UI, sans-serif' },
+  sidebar:        { width:'240px', background:'#141e29', borderRight:'1px solid #1a2732', display:'flex', flexDirection:'column', padding:'24px 0' },
+  logo:           { color:'#eef3f7', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
+  navItem:        { color:'#8fa1ae', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
+  navActive:      { color:'#eef3f7', background:'#1a2732', borderRight:'3px solid #edb268' },
+  userInfo:       { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1a2732', marginTop:'auto' },
+  userName:       { color:'#eef3f7', fontSize:'13px', fontWeight:'600' },
+  userRole:       { color:'#8fa1ae', fontSize:'11px' },
   main:           { flex:1, padding:'40px' },
   header:         { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'24px' },
-  backBtn:        { background:'none', border:'none', color:'#64748B', cursor:'pointer', fontSize:'13px', padding:0, marginBottom:'8px', display:'block' },
-  title:          { color:'#E2E8F0', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
-  subtitle:       { color:'#64748B', margin:0 },
-  newBtn:         { background:'#065F46', color:'#34D399', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px', height:'fit-content' },
+  backBtn:        { background:'none', border:'none', color:'#8fa1ae', cursor:'pointer', fontSize:'13px', padding:0, marginBottom:'8px', display:'block' },
+  title:          { color:'#eef3f7', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
+  subtitle:       { color:'#8fa1ae', margin:0 },
+  newBtn:         { background:'#0d1f14', color:'#4caf6d', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px', height:'fit-content' },
   form:           { borderRadius:'16px', padding:'24px', marginBottom:'24px', display:'flex', flexDirection:'column', gap:'12px' },
-  input:          { padding:'12px 16px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'14px', outline:'none' },
-  createBtn:      { background:'#065F46', color:'#34D399', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
-  cancelBtn:      { background:'#1E293B', color:'#64748B', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer' },
+  input:          { padding:'12px 16px', background:'#0d141c', border:'1px solid #1a2732', borderRadius:'8px', color:'#eef3f7', fontSize:'14px', outline:'none' },
+  createBtn:      { background:'#0d1f14', color:'#4caf6d', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
+  cancelBtn:      { background:'#1a2732', color:'#8fa1ae', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer' },
   progressCard:   { borderRadius:'16px', padding:'24px', marginBottom:'24px' },
   progressHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' },
-  progressLabel:  { color:'#E2E8F0', fontWeight:'700', fontSize:'16px' },
-  progressPercent:{ color:'#1E40AF', fontWeight:'700', fontSize:'18px' },
-  progressBar:    { background:'#0A0E18', borderRadius:'4px', height:'8px', overflow:'hidden' },
-  progressFill:   { background:'#1E40AF', height:'100%', borderRadius:'4px', transition:'width .5s' },
+  progressLabel:  { color:'#eef3f7', fontWeight:'700', fontSize:'16px' },
+  progressPercent:{ color:'#edb268', fontWeight:'700', fontSize:'18px' },
+  progressBar:    { background:'#0d141c', borderRadius:'4px', height:'8px', overflow:'hidden' },
+  progressFill:   { background:'#edb268', height:'100%', borderRadius:'4px', transition:'width .5s' },
   card:           { borderRadius:'16px', overflow:'hidden' },
-  taskRow:        { display:'flex', alignItems:'center', gap:'12px', padding:'16px 20px', borderBottom:'1px solid #1E293B' },
-  checkDone:      { color:'#34D399', fontSize:'20px', width:'24px' },
-  checkOpen:      { color:'#475569', fontSize:'20px', width:'24px' },
+  taskRow:        { display:'flex', alignItems:'center', gap:'12px', padding:'16px 20px', borderBottom:'1px solid #1a2732' },
+  checkDone:      { color:'#4caf6d', fontSize:'20px', width:'24px' },
+  checkOpen:      { color:'#748998', fontSize:'20px', width:'24px' },
   typeBadge:      { padding:'4px 10px', borderRadius:'6px', fontSize:'12px', fontWeight:'600' },
-  explainBtn:     { background:'transparent', border:'1px solid #1E40AF', color:'#7DD3FC', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
-  completeBtn:    { background:'#065F46', color:'#34D399', border:'none', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
-  doneBadge:      { color:'#34D399', fontSize:'13px', fontWeight:'600' },
+  explainBtn:     { background:'transparent', border:'1px solid #edb268', color:'#edb268', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  completeBtn:    { background:'#0d1f14', color:'#4caf6d', border:'none', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  doneBadge:      { color:'#4caf6d', fontSize:'13px', fontWeight:'600' },
   modal:          { position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
   modalCard:      { borderRadius:'18px', padding:'32px', maxWidth:'600px', width:'90%', maxHeight:'80vh', overflowY:'auto' },
   modalHeader:    { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' },
-  closeBtn:       { background:'none', border:'none', color:'#64748B', fontSize:'20px', cursor:'pointer' },
+  closeBtn:       { background:'none', border:'none', color:'#8fa1ae', fontSize:'20px', cursor:'pointer' },
   step:           { display:'flex', gap:'12px', alignItems:'flex-start', marginBottom:'12px' },
-  stepNum:        { background:'#1E40AF', color:'#fff', borderRadius:'50%', width:'24px', height:'24px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', flexShrink:0 },
+  stepNum:        { background:'#edb268', color:'#fff', borderRadius:'50%', width:'24px', height:'24px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', flexShrink:0 },
 };

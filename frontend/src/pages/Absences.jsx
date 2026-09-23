@@ -33,12 +33,12 @@ function LeaveModal({ type, onClose, onCreated }) {
     <div className="gx-modal-overlay" style={m.overlay}>
       <div className="gx-modal" style={m.modal}>
         <div style={m.header}>
-          <h2 style={{color:'#E2E8F0', margin:0}}>{isSick ? 'Krank melden' : 'Urlaub beantragen'}</h2>
+          <h2 style={{color:'#eef3f7', margin:0}}>{isSick ? 'Krank melden' : 'Urlaub beantragen'}</h2>
           <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
 
         {!isSick && (
-          <p style={{color:'#64748B', fontSize:'13px', marginTop:0}}>
+          <p style={{color:'#8fa1ae', fontSize:'13px', marginTop:0}}>
             Der Antrag muss von deinem Leader oder der Verwaltung bestätigt werden,
             bevor er im System als Urlaub gilt.
           </p>
@@ -54,7 +54,7 @@ function LeaveModal({ type, onClose, onCreated }) {
         <textarea className="gx-input" style={{...m.input, height:'70px', resize:'vertical'}}
                   value={reason} onChange={e => setReason(e.target.value)} />
 
-        {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
+        {msg && <p style={{color: msg.startsWith('✅') ? '#4caf6d' : '#e0665a', fontSize:'13px'}}>{msg}</p>}
 
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
           <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>
@@ -114,9 +114,9 @@ export default function Absences() {
   };
 
   const statusBadge = (status) => {
-    if (status === 'Genehmigt') return <span style={{...s.badge, color:'#34D399', borderColor:'#065F46'}}>Genehmigt</span>;
-    if (status === 'Abgelehnt') return <span style={{...s.badge, color:'#EF4444', borderColor:'#3B0000'}}>Abgelehnt</span>;
-    return <span style={{...s.badge, color:'#F59E0B', borderColor:'#2D1B00'}}>Ausstehend</span>;
+    if (status === 'Genehmigt') return <span style={{...s.badge, color:'#4caf6d', borderColor:'#0d1f14'}}>Genehmigt</span>;
+    if (status === 'Abgelehnt') return <span style={{...s.badge, color:'#e0665a', borderColor:'#240b08'}}>Abgelehnt</span>;
+    return <span style={{...s.badge, color:'#d9a83e', borderColor:'#241a06'}}>Ausstehend</span>;
   };
 
   const filteredPresence = presence.filter(p =>
@@ -175,30 +175,30 @@ export default function Absences() {
                    value={filter} onChange={e => setFilter(e.target.value)} />
 
             {presenceLoading ? (
-              <p style={{color:'#64748B'}}>Laden...</p>
+              <p style={{color:'#8fa1ae'}}>Laden...</p>
             ) : filteredPresence.length === 0 ? (
-              <p style={{color:'#64748B'}}>Keine Teammitglieder gefunden.</p>
+              <p style={{color:'#8fa1ae'}}>Keine Teammitglieder gefunden.</p>
             ) : filteredPresence.map(p => (
               <div key={p.user_id} className="gx-row" style={s.presenceRow}>
                 <span style={{fontSize:'20px'}}>
                   {p.on_leave ? (p.leave_type === 'Krankmeldung' ? '🤒' : '🏖️') : '✅'}
                 </span>
                 <div style={{flex:1}}>
-                  <div style={{color:'#E2E8F0', fontWeight:'600', fontSize:'14px'}}>
+                  <div style={{color:'#eef3f7', fontWeight:'600', fontSize:'14px'}}>
                     {p.username}
-                    <span style={{color:'#64748B', fontWeight:'400', fontSize:'12px'}}>
+                    <span style={{color:'#8fa1ae', fontWeight:'400', fontSize:'12px'}}>
                       {' '}· {p.department || 'Allgemein'}
                     </span>
                   </div>
                   {p.on_leave ? (
-                    <div style={{color:'#F59E0B', fontSize:'12px', marginTop:'2px'}}>
+                    <div style={{color:'#d9a83e', fontSize:'12px', marginTop:'2px'}}>
                       {p.leave_type}
                       {p.substitute_username
-                        ? <span style={{color:'#7DD3FC'}}> · Vertretung: {p.substitute_username}</span>
-                        : <span style={{color:'#EF4444'}}> · keine Vertretung gefunden</span>}
+                        ? <span style={{color:'#edb268'}}> · Vertretung: {p.substitute_username}</span>
+                        : <span style={{color:'#e0665a'}}> · keine Vertretung gefunden</span>}
                     </div>
                   ) : (
-                    <div style={{color:'#34D399', fontSize:'12px', marginTop:'2px'}}>Anwesend</div>
+                    <div style={{color:'#4caf6d', fontSize:'12px', marginTop:'2px'}}>Anwesend</div>
                   )}
                 </div>
               </div>
@@ -216,13 +216,13 @@ export default function Absences() {
               </div>
             </div>
             {pending.length === 0 ? (
-              <p style={{color:'#64748B'}}>Keine offenen Anträge.</p>
+              <p style={{color:'#8fa1ae'}}>Keine offenen Anträge.</p>
             ) : pending.map(req => (
               <div key={req.id} className="gx-row" style={s.requestRow}>
                 <span style={{fontSize:'20px'}}>🏖️</span>
                 <div style={{flex:1}}>
-                  <div style={{color:'#E2E8F0', fontWeight:'600', fontSize:'14px'}}>{req.username}</div>
-                  <div style={{color:'#64748B', fontSize:'12px', marginTop:'2px'}}>
+                  <div style={{color:'#eef3f7', fontWeight:'600', fontSize:'14px'}}>{req.username}</div>
+                  <div style={{color:'#8fa1ae', fontSize:'12px', marginTop:'2px'}}>
                     {req.start_date} – {req.end_date}{req.reason ? ` · ${req.reason}` : ''}
                   </div>
                 </div>
@@ -239,13 +239,13 @@ export default function Absences() {
             <h2 style={s.cardTitle}>Meine Abwesenheiten</h2>
           </div>
           {mine.length === 0 ? (
-            <p style={{color:'#64748B'}}>Noch keine Meldungen.</p>
+            <p style={{color:'#8fa1ae'}}>Noch keine Meldungen.</p>
           ) : mine.map(req => (
             <div key={req.id} className="gx-row" style={s.requestRow}>
               <span style={{fontSize:'20px'}}>{req.leave_type === 'Krankmeldung' ? '🤒' : '🏖️'}</span>
               <div style={{flex:1}}>
-                <div style={{color:'#E2E8F0', fontWeight:'600', fontSize:'14px'}}>{req.leave_type}</div>
-                <div style={{color:'#64748B', fontSize:'12px', marginTop:'2px'}}>
+                <div style={{color:'#eef3f7', fontWeight:'600', fontSize:'14px'}}>{req.leave_type}</div>
+                <div style={{color:'#8fa1ae', fontSize:'12px', marginTop:'2px'}}>
                   {req.start_date} – {req.end_date}{req.reason ? ` · ${req.reason}` : ''}
                   {req.substitute_username && ` · Vertretung: ${req.substitute_username}`}
                 </div>
@@ -264,40 +264,40 @@ export default function Absences() {
 }
 
 const s = {
-  page:         { display:'flex', minHeight:'100vh', background:'#0A0E18', fontFamily:'Segoe UI, sans-serif' },
-  sidebar:      { width:'240px', background:'#10192B', borderRight:'1px solid #1E293B', display:'flex', flexDirection:'column', padding:'24px 0' },
-  logo:         { color:'#E2E8F0', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
-  navItem:      { color:'#64748B', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
-  navActive:    { color:'#E2E8F0', background:'#1E293B', borderRight:'3px solid #1E40AF' },
-  userInfo:     { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1E293B', marginTop:'auto' },
-  userName:     { color:'#E2E8F0', fontSize:'13px', fontWeight:'600' },
-  userRole:     { color:'#64748B', fontSize:'11px' },
+  page:         { display:'flex', minHeight:'100vh', background:'#0d141c', fontFamily:'Segoe UI, sans-serif' },
+  sidebar:      { width:'240px', background:'#141e29', borderRight:'1px solid #1a2732', display:'flex', flexDirection:'column', padding:'24px 0' },
+  logo:         { color:'#eef3f7', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
+  navItem:      { color:'#8fa1ae', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
+  navActive:    { color:'#eef3f7', background:'#1a2732', borderRight:'3px solid #edb268' },
+  userInfo:     { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1a2732', marginTop:'auto' },
+  userName:     { color:'#eef3f7', fontSize:'13px', fontWeight:'600' },
+  userRole:     { color:'#8fa1ae', fontSize:'11px' },
   main:         { flex:1, padding:'40px' },
   header:       { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'24px', flexWrap:'wrap', gap:'16px' },
-  title:        { color:'#E2E8F0', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
-  subtitle:     { color:'#64748B', margin:0, fontSize:'14px' },
-  sickBtn:      { background:'#1E293B', color:'#F59E0B', border:'1px solid #F59E0B', borderRadius:'8px', padding:'12px 18px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
-  vacBtn:       { background:'#065F46', color:'#34D399', border:'none', borderRadius:'8px', padding:'12px 18px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  title:        { color:'#eef3f7', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
+  subtitle:     { color:'#8fa1ae', margin:0, fontSize:'14px' },
+  sickBtn:      { background:'#1a2732', color:'#d9a83e', border:'1px solid #d9a83e', borderRadius:'8px', padding:'12px 18px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  vacBtn:       { background:'#0d1f14', color:'#4caf6d', border:'none', borderRadius:'8px', padding:'12px 18px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   card:         { borderRadius:'16px', padding:'24px', marginBottom:'24px' },
   cardHeader:   { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px', flexWrap:'wrap', gap:'12px' },
-  cardTitle:    { color:'#E2E8F0', fontSize:'18px', fontWeight:'700', margin:'0 0 4px' },
-  cardSubtitle: { color:'#64748B', fontSize:'13px', margin:0 },
-  dateInput:    { padding:'10px 14px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'13px', outline:'none' },
-  filterInput:  { width:'100%', padding:'10px 14px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'13px', outline:'none', marginBottom:'14px', boxSizing:'border-box' },
-  presenceRow:  { display:'flex', alignItems:'center', gap:'12px', padding:'12px 0', borderBottom:'1px solid #1E293B' },
-  requestRow:   { display:'flex', alignItems:'center', gap:'12px', padding:'14px 0', borderBottom:'1px solid #1E293B' },
+  cardTitle:    { color:'#eef3f7', fontSize:'18px', fontWeight:'700', margin:'0 0 4px' },
+  cardSubtitle: { color:'#8fa1ae', fontSize:'13px', margin:0 },
+  dateInput:    { padding:'10px 14px', background:'#0d141c', border:'1px solid #1a2732', borderRadius:'8px', color:'#eef3f7', fontSize:'13px', outline:'none' },
+  filterInput:  { width:'100%', padding:'10px 14px', background:'#0d141c', border:'1px solid #1a2732', borderRadius:'8px', color:'#eef3f7', fontSize:'13px', outline:'none', marginBottom:'14px', boxSizing:'border-box' },
+  presenceRow:  { display:'flex', alignItems:'center', gap:'12px', padding:'12px 0', borderBottom:'1px solid #1a2732' },
+  requestRow:   { display:'flex', alignItems:'center', gap:'12px', padding:'14px 0', borderBottom:'1px solid #1a2732' },
   badge:        { border:'1px solid', borderRadius:'6px', padding:'4px 10px', fontSize:'11px', fontWeight:'700' },
-  approveBtn:   { background:'#065F46', color:'#34D399', border:'none', padding:'8px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:'600' },
-  rejectBtn:    { background:'#3B0000', color:'#EF4444', border:'none', padding:'8px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:'600' },
+  approveBtn:   { background:'#0d1f14', color:'#4caf6d', border:'none', padding:'8px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:'600' },
+  rejectBtn:    { background:'#240b08', color:'#e0665a', border:'none', padding:'8px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:'600' },
 };
 
 const m = {
   overlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
   modal:   { borderRadius:'18px', padding:'32px', width:'100%', maxWidth:'440px', boxSizing:'border-box' },
   header:  { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' },
-  close:   { background:'none', border:'none', color:'#64748B', fontSize:'20px', cursor:'pointer' },
-  label:   { color:'#94A3B8', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
-  input:   { width:'100%', padding:'12px 16px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'14px', outline:'none', marginBottom:'16px', boxSizing:'border-box' },
-  btn:     { background:'#1E40AF', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
-  cancel:  { background:'#1E293B', color:'#64748B', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
+  close:   { background:'none', border:'none', color:'#8fa1ae', fontSize:'20px', cursor:'pointer' },
+  label:   { color:'#8fa1ae', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
+  input:   { width:'100%', padding:'12px 16px', background:'#0d141c', border:'1px solid #1a2732', borderRadius:'8px', color:'#eef3f7', fontSize:'14px', outline:'none', marginBottom:'16px', boxSizing:'border-box' },
+  btn:     { background:'#edb268', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
+  cancel:  { background:'#1a2732', color:'#8fa1ae', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
 };

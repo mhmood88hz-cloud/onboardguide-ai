@@ -126,16 +126,16 @@ export default function Chat() {
         {/* Messages */}
         <div style={s.messages}>
           {histLoading && (
-            <p style={{color:'#475569', textAlign:'center'}}>Verlauf wird geladen...</p>
+            <p style={{color:'#748998', textAlign:'center'}}>Verlauf wird geladen...</p>
           )}
 
           {!histLoading && messages.length === 0 && (
             <div style={s.empty}>
               <div style={{fontSize:'48px', marginBottom:'16px'}}>💬</div>
-              <p style={{color:'#64748B', fontSize:'15px'}}>
+              <p style={{color:'#8fa1ae', fontSize:'15px'}}>
                 Stelle deine erste Frage zum Onboarding
               </p>
-              <p style={{color:'#475569', fontSize:'13px', marginTop:'8px'}}>
+              <p style={{color:'#748998', fontSize:'13px', marginTop:'8px'}}>
                 Tipp: Nutze ⚡ Vergleichen um zwei KI-Modelle zu vergleichen
               </p>
             </div>
@@ -191,12 +191,12 @@ export default function Chat() {
                         <div style={{display:'flex', gap:'12px', flexWrap:'wrap'}}>
                           {msg.sources.map((src, j) => {
                             const pct = Math.round(src.similarity_score * 100);
-                            const col = pct > 60 ? '#34D399' : pct > 40 ? '#F59E0B' : '#94A3B8';
+                            const col = pct > 60 ? '#4caf6d' : pct > 40 ? '#d9a83e' : '#8fa1ae';
                             return (
                               <div key={j} style={s.sourceCard}>
                                 <div style={{display:'flex', alignItems:'center', gap:'6px', marginBottom:'6px'}}>
                                   <span>📄</span>
-                                  <span style={{color:'#E2E8F0', fontSize:'12px', fontWeight:'600'}}>
+                                  <span style={{color:'#eef3f7', fontSize:'12px', fontWeight:'600'}}>
                                     {(src.document || '').substring(0, 22)}...
                                   </span>
                                 </div>
@@ -219,7 +219,7 @@ export default function Chat() {
                         <div style={s.sourcesLabel}>⚡ MODEL COMPARISON</div>
                         <div style={{display:'flex', gap:'12px'}}>
                           {msg.comparison.map((m, j) => {
-                            const col     = m.model === 'gpt-4o-mini' ? '#34D399' : '#F59E0B';
+                            const col     = m.model === 'gpt-4o-mini' ? '#4caf6d' : '#d9a83e';
                             const fastest = msg.comparison.reduce((a,b) =>
                               a.response_time <= b.response_time ? a : b
                             ).model;
@@ -228,11 +228,11 @@ export default function Chat() {
                                 <div style={{color:col, fontWeight:'700', fontSize:'12px', marginBottom:'8px'}}>
                                   {m.model} {m.model === fastest ? '🏆' : ''}
                                 </div>
-                                <div style={{fontSize:'11px', color:'#94A3B8', lineHeight:'2'}}>
-                                  ⏱ <b style={{color:'#E2E8F0'}}>{m.response_time}s</b><br/>
-                                  🔢 <b style={{color:'#E2E8F0'}}>{m.tokens_used} tokens</b><br/>
-                                  💰 <b style={{color:'#E2E8F0'}}>${m.cost_usd}</b><br/>
-                                  📝 <b style={{color:'#E2E8F0'}}>{m.answer_length} chars</b>
+                                <div style={{fontSize:'11px', color:'#8fa1ae', lineHeight:'2'}}>
+                                  ⏱ <b style={{color:'#eef3f7'}}>{m.response_time}s</b><br/>
+                                  🔢 <b style={{color:'#eef3f7'}}>{m.tokens_used} tokens</b><br/>
+                                  💰 <b style={{color:'#eef3f7'}}>${m.cost_usd}</b><br/>
+                                  📝 <b style={{color:'#eef3f7'}}>{m.answer_length} chars</b>
                                 </div>
                               </div>
                             );
@@ -250,7 +250,7 @@ export default function Chat() {
             <div style={s.aiRow}>
               <div style={s.aiAvatar}>🤖</div>
               <div style={s.aiBubble}>
-                <p style={{margin:0, color:'#64748B'}}>Antwort wird generiert...</p>
+                <p style={{margin:0, color:'#8fa1ae'}}>Antwort wird generiert...</p>
               </div>
             </div>
           )}
@@ -292,39 +292,39 @@ export default function Chat() {
 }
 
 const s = {
-  page:         { display:'flex', minHeight:'100vh', background:'#0A0E18', fontFamily:'Segoe UI, sans-serif' },
-  sidebar:      { width:'240px', background:'#10192B', borderRight:'1px solid #1E293B', display:'flex', flexDirection:'column', padding:'24px 0' },
-  logo:         { color:'#E2E8F0', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
-  navItem:      { color:'#64748B', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
-  navActive:    { color:'#E2E8F0', background:'#1E293B', borderRight:'3px solid #1E40AF' },
-  userInfo:     { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1E293B', marginTop:'auto' },
-  userName:     { color:'#E2E8F0', fontSize:'13px', fontWeight:'600' },
-  userRole:     { color:'#64748B', fontSize:'11px' },
+  page:         { display:'flex', minHeight:'100vh', background:'#0d141c', fontFamily:'Segoe UI, sans-serif' },
+  sidebar:      { width:'240px', background:'#141e29', borderRight:'1px solid #1a2732', display:'flex', flexDirection:'column', padding:'24px 0' },
+  logo:         { color:'#eef3f7', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
+  navItem:      { color:'#8fa1ae', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
+  navActive:    { color:'#eef3f7', background:'#1a2732', borderRight:'3px solid #edb268' },
+  userInfo:     { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1a2732', marginTop:'auto' },
+  userName:     { color:'#eef3f7', fontSize:'13px', fontWeight:'600' },
+  userRole:     { color:'#8fa1ae', fontSize:'11px' },
   main:         { flex:1, display:'flex', flexDirection:'column', height:'100vh' },
-  header:       { display:'flex', justifyContent:'space-between', alignItems:'center', padding:'28px 40px 20px', borderBottom:'1px solid #1E293B' },
-  title:        { color:'#E2E8F0', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
-  subtitle:     { color:'#64748B', margin:0, fontSize:'14px' },
-  dayBadge:     { background:'#1E293B', color:'#7DD3FC', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
+  header:       { display:'flex', justifyContent:'space-between', alignItems:'center', padding:'28px 40px 20px', borderBottom:'1px solid #1a2732' },
+  title:        { color:'#eef3f7', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
+  subtitle:     { color:'#8fa1ae', margin:0, fontSize:'14px' },
+  dayBadge:     { background:'#1a2732', color:'#edb268', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
   messages:     { flex:1, overflowY:'auto', padding:'28px 40px', display:'flex', flexDirection:'column', gap:'24px' },
   empty:        { textAlign:'center', marginTop:'80px' },
   userRow:      { display:'flex', justifyContent:'flex-end' },
-  userBubble:   { background:'#1E293B', color:'#E2E8F0', padding:'14px 18px', borderRadius:'16px 16px 4px 16px', maxWidth:'60%', fontSize:'14px', lineHeight:'1.6' },
-  compareBadge: { display:'inline-block', marginLeft:'10px', background:'#2D1B00', color:'#F59E0B', padding:'2px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:'600' },
+  userBubble:   { background:'#1a2732', color:'#eef3f7', padding:'14px 18px', borderRadius:'16px 16px 4px 16px', maxWidth:'60%', fontSize:'14px', lineHeight:'1.6' },
+  compareBadge: { display:'inline-block', marginLeft:'10px', background:'#241a06', color:'#d9a83e', padding:'2px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:'600' },
   aiRow:        { display:'flex', gap:'12px', alignItems:'flex-start' },
   aiAvatar:     { fontSize:'28px', marginTop:'4px', flexShrink:0 },
-  aiBubble:     { color:'#E2E8F0', padding:'16px 20px', borderRadius:'4px 16px 16px 16px', flex:1, fontSize:'14px', lineHeight:'1.6' },
+  aiBubble:     { color:'#eef3f7', padding:'16px 20px', borderRadius:'4px 16px 16px 16px', flex:1, fontSize:'14px', lineHeight:'1.6' },
   sourcesBox:   { marginTop:'12px' },
-  sourcesLabel: { color:'#475569', fontSize:'10px', fontWeight:'700', letterSpacing:'1px', marginBottom:'8px' },
-  sourceCard:   { background:'#10192B', border:'1px solid #1E293B', borderRadius:'8px', padding:'10px', minWidth:'180px' },
-  refImage:     { maxWidth:'340px', maxHeight:'340px', borderRadius:'8px', border:'1px solid #1E293B', display:'block' },
-  imgPlaceholder: { width:'340px', height:'120px', display:'flex', alignItems:'center', justifyContent:'center', background:'#10192B', border:'1px solid #1E293B', borderRadius:'8px', color:'#475569', fontSize:'12px' },
-  imgTitle:     { color:'#E2E8F0', fontSize:'12px', fontWeight:'600', marginTop:'8px' },
-  imgCaption:   { color:'#64748B', fontSize:'11px', marginTop:'2px' },
-  scoreBarWrap: { background:'#0A0E18', borderRadius:'4px', height:'6px', overflow:'hidden', marginBottom:'4px' },
+  sourcesLabel: { color:'#748998', fontSize:'10px', fontWeight:'700', letterSpacing:'1px', marginBottom:'8px' },
+  sourceCard:   { background:'#141e29', border:'1px solid #1a2732', borderRadius:'8px', padding:'10px', minWidth:'180px' },
+  refImage:     { maxWidth:'340px', maxHeight:'340px', borderRadius:'8px', border:'1px solid #1a2732', display:'block' },
+  imgPlaceholder: { width:'340px', height:'120px', display:'flex', alignItems:'center', justifyContent:'center', background:'#141e29', border:'1px solid #1a2732', borderRadius:'8px', color:'#748998', fontSize:'12px' },
+  imgTitle:     { color:'#eef3f7', fontSize:'12px', fontWeight:'600', marginTop:'8px' },
+  imgCaption:   { color:'#8fa1ae', fontSize:'11px', marginTop:'2px' },
+  scoreBarWrap: { background:'#0d141c', borderRadius:'4px', height:'6px', overflow:'hidden', marginBottom:'4px' },
   scoreBarFill: { height:'100%', borderRadius:'4px', transition:'width .8s' },
-  compCard:     { background:'#0A0E18', border:'1px solid', borderRadius:'8px', padding:'12px', flex:1 },
-  inputArea:    { padding:'20px 40px', borderTop:'1px solid #1E293B', display:'flex', gap:'10px', alignItems:'center' },
-  input:        { flex:1, padding:'14px 20px', background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', color:'#E2E8F0', fontSize:'14px', outline:'none' },
-  compareBtn:   { background:'#1E293B', color:'#F59E0B', border:'1px solid #F59E0B', borderRadius:'12px', padding:'14px 16px', cursor:'pointer', fontSize:'13px', fontWeight:'600', whiteSpace:'nowrap' },
-  sendBtn:      { background:'#1E40AF', color:'#fff', border:'none', borderRadius:'12px', width:'50px', height:'50px', cursor:'pointer', fontSize:'18px', flexShrink:0 },
+  compCard:     { background:'#0d141c', border:'1px solid', borderRadius:'8px', padding:'12px', flex:1 },
+  inputArea:    { padding:'20px 40px', borderTop:'1px solid #1a2732', display:'flex', gap:'10px', alignItems:'center' },
+  input:        { flex:1, padding:'14px 20px', background:'#141e29', border:'1px solid #1a2732', borderRadius:'12px', color:'#eef3f7', fontSize:'14px', outline:'none' },
+  compareBtn:   { background:'#1a2732', color:'#d9a83e', border:'1px solid #d9a83e', borderRadius:'12px', padding:'14px 16px', cursor:'pointer', fontSize:'13px', fontWeight:'600', whiteSpace:'nowrap' },
+  sendBtn:      { background:'#edb268', color:'#fff', border:'none', borderRadius:'12px', width:'50px', height:'50px', cursor:'pointer', fontSize:'18px', flexShrink:0 },
 };

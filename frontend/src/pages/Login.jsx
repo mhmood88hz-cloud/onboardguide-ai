@@ -77,7 +77,7 @@ export default function Login() {
         <div style={s.row}>
           <label style={s.checkRow}>
             <input type="checkbox" style={{marginRight:'6px'}} />
-            <span style={{color:'#64748B', fontSize:'13px'}}>Remember me</span>
+            <span style={{color:'#8fa1ae', fontSize:'13px'}}>Remember me</span>
           </label>
           <span style={s.forgotLink}>Passwort vergessen? Kontaktiere HR.</span>
         </div>
@@ -106,22 +106,22 @@ export default function Login() {
 }
 
 const s = {
-  page:      { minHeight:'100vh', background:'#0A0E18', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Segoe UI, sans-serif' },
+  page:      { minHeight:'100vh', background:'#0d141c', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Segoe UI, sans-serif' },
   card:      { background:'transparent', borderRadius:'20px', padding:'48px', width:'420px', boxSizing:'border-box' },
   logoRow:   { display:'flex', alignItems:'center', gap:'12px', marginBottom:'6px' },
   logoIcon:  { fontSize:'32px' },
-  logoText:  { color:'#E2E8F0', fontSize:'26px', fontWeight:'700' },
-  tagline:   { color:'#3B82F6', fontSize:'14px', marginBottom:'32px', marginTop:0 },
-  label:     { color:'#94A3B8', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
+  logoText:  { color:'#eef3f7', fontSize:'26px', fontWeight:'700' },
+  tagline:   { color:'#e3a24d', fontSize:'14px', marginBottom:'32px', marginTop:0 },
+  label:     { color:'#8fa1ae', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
   inputWrap: { position:'relative', display:'flex', alignItems:'center', marginBottom:'20px' },
   inputIcon: { position:'absolute', left:'14px', fontSize:'16px', zIndex:1 },
-  input:     { width:'100%', padding:'13px 42px', background:'#0A0E18', border:'1px solid #1E40AF', borderRadius:'10px', color:'#E2E8F0', fontSize:'14px', outline:'none', boxSizing:'border-box' },
+  input:     { width:'100%', padding:'13px 42px', background:'#0d141c', border:'1px solid #edb268', borderRadius:'10px', color:'#eef3f7', fontSize:'14px', outline:'none', boxSizing:'border-box' },
   eyeIcon:   { position:'absolute', right:'14px', cursor:'pointer', fontSize:'16px' },
   row:       { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px' },
   checkRow:  { display:'flex', alignItems:'center', cursor:'pointer' },
-  forgotLink:{ color:'#3B82F6', fontSize:'13px', cursor:'pointer' },
-  error:     { color:'#EF4444', fontSize:'13px', marginBottom:'12px', textAlign:'center' },
-  button:    { width:'100%', padding:'14px', background:'#3B82F6', color:'#fff', border:'none', borderRadius:'10px', fontSize:'16px', fontWeight:'600', cursor:'pointer', marginBottom:'20px' },
-  hint:      { color:'#475569', fontSize:'12px', textAlign:'center', margin:'8px 0 0' },
-  signupLink:{ color:'#3B82F6', cursor:'pointer', fontWeight:'600' },
+  forgotLink:{ color:'#e3a24d', fontSize:'13px', cursor:'pointer' },
+  error:     { color:'#e0665a', fontSize:'13px', marginBottom:'12px', textAlign:'center' },
+  button:    { width:'100%', padding:'14px', background:'#e3a24d', color:'#fff', border:'none', borderRadius:'10px', fontSize:'16px', fontWeight:'600', cursor:'pointer', marginBottom:'20px' },
+  hint:      { color:'#748998', fontSize:'12px', textAlign:'center', margin:'8px 0 0' },
+  signupLink:{ color:'#e3a24d', cursor:'pointer', fontWeight:'600' },
 };

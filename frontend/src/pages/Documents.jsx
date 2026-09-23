@@ -70,14 +70,14 @@ export default function Documents() {
 
   const categoryColor = (cat) => {
     const map = {
-      'IT':           { bg:'#1E293B', color:'#7DD3FC' },
-      'Allgemein':    { bg:'#1E293B', color:'#94A3B8' },
-      'HR':           { bg:'#1E293B', color:'#A78BFA' },
-      'Finanzen':     { bg:'#2D1B00', color:'#F59E0B' },
+      'IT':           { bg:'#1a2732', color:'#edb268' },
+      'Allgemein':    { bg:'#1a2732', color:'#8fa1ae' },
+      'HR':           { bg:'#1a2732', color:'#A78BFA' },
+      'Finanzen':     { bg:'#241a06', color:'#d9a83e' },
       'Recht':        { bg:'#2D1B6E', color:'#A78BFA' },
-      'Marketing':    { bg:'#022C22', color:'#34D399' },
+      'Marketing':    { bg:'#0d1f14', color:'#4caf6d' },
     };
-    return map[cat] || { bg:'#1E293B', color:'#94A3B8' };
+    return map[cat] || { bg:'#1a2732', color:'#8fa1ae' };
   };
 
   return (
@@ -192,16 +192,16 @@ export default function Documents() {
           </div>
 
           {loading ? (
-            <div style={{padding:'24px', color:'#64748B'}}>Laden...</div>
+            <div style={{padding:'24px', color:'#8fa1ae'}}>Laden...</div>
           ) : docs.length === 0 ? (
-            <div style={{padding:'24px', color:'#64748B'}}>Keine Dokumente vorhanden.</div>
+            <div style={{padding:'24px', color:'#8fa1ae'}}>Keine Dokumente vorhanden.</div>
           ) : docs.map(doc => {
             const cat = categoryColor(doc.category);
             return (
               <div key={doc.id} className="gx-row" style={s.tableRow}>
                 <div style={{flex:3, display:'flex', alignItems:'center', gap:'12px'}}>
-                  <span style={{color:'#1E40AF', fontSize:'20px'}}>📄</span>
-                  <span style={{color:'#E2E8F0', fontWeight:'500'}}>{doc.title}</span>
+                  <span style={{color:'#edb268', fontSize:'20px'}}>📄</span>
+                  <span style={{color:'#eef3f7', fontWeight:'500'}}>{doc.title}</span>
                 </div>
                 <div style={{flex:1}}>
                   <span style={{
@@ -215,16 +215,16 @@ export default function Documents() {
                     {doc.category}
                   </span>
                 </div>
-                <div style={{flex:1, color:'#64748B', fontSize:'14px'}}>
+                <div style={{flex:1, color:'#8fa1ae', fontSize:'14px'}}>
                   {doc.chunk_count != null ? `${doc.chunk_count} Chunks` : '–'}
                 </div>
                 <div style={{flex:1, display:'flex', alignItems:'center', gap:'6px'}}>
                   <span style={{
                     width:'8px', height:'8px', borderRadius:'50%',
-                    background: doc.has_content ? '#34D399' : '#F59E0B',
+                    background: doc.has_content ? '#4caf6d' : '#d9a83e',
                     display:'inline-block'
                   }} />
-                  <span style={{color:'#64748B', fontSize:'13px'}}>
+                  <span style={{color:'#8fa1ae', fontSize:'13px'}}>
                     {doc.has_content ? 'Verarbeitet' : 'Kein Text'}
                   </span>
                 </div>
@@ -238,25 +238,25 @@ export default function Documents() {
 }
 
 const s = {
-  page:        { display:'flex', minHeight:'100vh', background:'#0A0E18' },
-  sidebar:     { width:'240px', background:'#10192B', borderRight:'1px solid #1E293B', display:'flex', flexDirection:'column', padding:'24px 0' },
-  logo:        { color:'#E2E8F0', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
-  navItem:     { color:'#64748B', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
-  navActive:   { color:'#E2E8F0', background:'#1E293B', borderRight:'3px solid #1E40AF' },
-  userInfo:    { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1E293B', marginTop:'auto' },
-  userName:    { color:'#E2E8F0', fontSize:'13px', fontWeight:'600' },
-  userRole:    { color:'#64748B', fontSize:'11px' },
+  page:        { display:'flex', minHeight:'100vh', background:'#0d141c' },
+  sidebar:     { width:'240px', background:'#141e29', borderRight:'1px solid #1a2732', display:'flex', flexDirection:'column', padding:'24px 0' },
+  logo:        { color:'#eef3f7', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
+  navItem:     { color:'#8fa1ae', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
+  navActive:   { color:'#eef3f7', background:'#1a2732', borderRight:'3px solid #edb268' },
+  userInfo:    { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1a2732', marginTop:'auto' },
+  userName:    { color:'#eef3f7', fontSize:'13px', fontWeight:'600' },
+  userRole:    { color:'#8fa1ae', fontSize:'11px' },
   main:        { flex:1, padding:'40px' },
   header:      { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'24px' },
-  title:       { color:'#E2E8F0', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
-  subtitle:    { color:'#64748B', margin:0 },
-  uploadBtn:   { background:'#1E40AF', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'14px' },
+  title:       { color:'#eef3f7', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
+  subtitle:    { color:'#8fa1ae', margin:0 },
+  uploadBtn:   { background:'#edb268', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'14px' },
   form:        { borderRadius:'16px', padding:'24px', marginBottom:'24px', display:'flex', flexDirection:'column', gap:'12px' },
-  input:       { padding:'12px 16px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'14px', outline:'none' },
-  fileBtn:     { padding:'12px 16px', background:'#0A0E18', border:'1px dashed #334155', borderRadius:'8px', color:'#64748B', cursor:'pointer', textAlign:'left', fontSize:'14px' },
-  submitBtn:   { background:'#1E40AF', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
-  cancelBtn:   { background:'#1E293B', color:'#64748B', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
+  input:       { padding:'12px 16px', background:'#0d141c', border:'1px solid #1a2732', borderRadius:'8px', color:'#eef3f7', fontSize:'14px', outline:'none' },
+  fileBtn:     { padding:'12px 16px', background:'#0d141c', border:'1px dashed #26343f', borderRadius:'8px', color:'#8fa1ae', cursor:'pointer', textAlign:'left', fontSize:'14px' },
+  submitBtn:   { background:'#edb268', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
+  cancelBtn:   { background:'#1a2732', color:'#8fa1ae', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
   table:       { borderRadius:'16px', overflow:'hidden' },
-  tableHeader: { display:'flex', padding:'16px 20px', borderBottom:'1px solid #1E293B', color:'#475569', fontSize:'11px', fontWeight:'700', letterSpacing:'1px' },
-  tableRow:    { display:'flex', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #0F172A', gap:'12px' },
+  tableHeader: { display:'flex', padding:'16px 20px', borderBottom:'1px solid #1a2732', color:'#748998', fontSize:'11px', fontWeight:'700', letterSpacing:'1px' },
+  tableRow:    { display:'flex', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #0d141c', gap:'12px' },
 };

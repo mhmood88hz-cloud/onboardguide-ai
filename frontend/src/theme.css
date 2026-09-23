@@ -4,8 +4,8 @@
    via className alongside the existing inline `style` objects. */
 
 :root {
-  --gx-blue:   #3B82F6;
-  --gx-blue-2: #1E40AF;
+  --gx-blue:   #e3a24d;
+  --gx-blue-2: #edb268;
   --gx-radius-lg: 20px;
   --gx-radius-md: 14px;
   --gx-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -16,10 +16,10 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
     'Segoe UI', 'Inter', 'Roboto', sans-serif;
-  background: #0A0E18;
+  background: #0d141c;
 }
 
-::selection { background: rgba(59, 130, 246, 0.35); color: #fff; }
+::selection { background: rgba(227, 162, 77, 0.35); color: #fff; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -39,9 +39,9 @@ body {
   inset: -20%;
   z-index: -1;
   background:
-    radial-gradient(600px circle at 12% 8%,  rgba(59, 130, 246, 0.16), transparent 60%),
-    radial-gradient(560px circle at 88% 18%, rgba(167, 139, 250, 0.12), transparent 60%),
-    radial-gradient(640px circle at 30% 95%, rgba(52, 211, 153, 0.08), transparent 60%);
+    radial-gradient(600px circle at 12% 8%,  rgba(227, 162, 77, 0.16), transparent 60%),
+    radial-gradient(560px circle at 88% 18%, rgba(237, 178, 104, 0.12), transparent 60%),
+    radial-gradient(640px circle at 30% 95%, rgba(76, 175, 109, 0.08), transparent 60%);
   pointer-events: none;
   animation: gx-drift 22s ease-in-out infinite alternate;
 }
@@ -105,7 +105,7 @@ body {
 .gx-btn:disabled { cursor: default; }
 .gx-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45);
+  box-shadow: 0 0 0 3px rgba(227, 162, 77, 0.45);
 }
 
 /* Inputs — soft focus glow instead of hard border swap */
@@ -114,8 +114,8 @@ body {
 }
 .gx-input:focus {
   outline: none;
-  border-color: rgba(59, 130, 246, 0.6) !important;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  border-color: rgba(227, 162, 77, 0.6) !important;
+  box-shadow: 0 0 0 4px rgba(227, 162, 77, 0.15);
 }
 
 .gx-row {
@@ -127,7 +127,7 @@ body {
   border-radius: 10px;
   transition: background 0.2s var(--gx-ease), color 0.2s var(--gx-ease), transform 0.2s var(--gx-ease);
 }
-.gx-nav-item:hover { background: rgba(148, 163, 184, 0.08); color: #E2E8F0; transform: translateX(2px); }
+.gx-nav-item:hover { background: rgba(148, 163, 184, 0.08); color: #eef3f7; transform: translateX(2px); }
 
 @media (prefers-reduced-motion: reduce) {
   .gx-aurora::before, .gx-card, .gx-modal, .gx-modal-overlay, .gx-btn, .gx-nav-item { animation: none; transition: none; }

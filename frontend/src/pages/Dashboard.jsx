@@ -27,14 +27,14 @@ function ChangePwModal({ onClose }) {
     <div className="gx-modal-overlay" style={m.overlay}>
       <div className="gx-modal" style={m.modal}>
         <div style={m.header}>
-          <h2 style={{color:'#E2E8F0', margin:0}}>Passwort ändern</h2>
+          <h2 style={{color:'#eef3f7', margin:0}}>Passwort ändern</h2>
           <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
         <label style={m.label}>Aktuelles Passwort</label>
         <input className="gx-input" style={m.input} type="password" value={oldPw} onChange={e => setOldPw(e.target.value)} />
         <label style={m.label}>Neues Passwort</label>
         <input className="gx-input" style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
-        {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
+        {msg && <p style={{color: msg.startsWith('✅') ? '#4caf6d' : '#e0665a', fontSize:'13px'}}>{msg}</p>}
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
           <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gespeichert...' : 'Ändern'}</button>
           <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
@@ -68,15 +68,15 @@ function ResetPwModal({ member, onClose }) {
     <div className="gx-modal-overlay" style={m.overlay}>
       <div className="gx-modal" style={m.modal}>
         <div style={m.header}>
-          <h2 style={{color:'#E2E8F0', margin:0}}>Passwort zurücksetzen</h2>
+          <h2 style={{color:'#eef3f7', margin:0}}>Passwort zurücksetzen</h2>
           <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
-        <p style={{color:'#64748B', marginBottom:'16px', fontSize:'14px'}}>
-          Neues Passwort für <b style={{color:'#E2E8F0'}}>{member.username}</b>
+        <p style={{color:'#8fa1ae', marginBottom:'16px', fontSize:'14px'}}>
+          Neues Passwort für <b style={{color:'#eef3f7'}}>{member.username}</b>
         </p>
         <label style={m.label}>Neues Passwort</label>
         <input className="gx-input" style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
-        {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
+        {msg && <p style={{color: msg.startsWith('✅') ? '#4caf6d' : '#e0665a', fontSize:'13px'}}>{msg}</p>}
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
           <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gesetzt...' : 'Zurücksetzen'}</button>
           <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
@@ -124,7 +124,7 @@ function NewUserModal({ onClose, onCreated }) {
     <div className="gx-modal-overlay" style={m.overlay}>
       <div className="gx-modal" style={{...m.modal, maxWidth:'480px', maxHeight:'90vh', overflowY:'auto'}}>
         <div style={m.header}>
-          <h2 style={{color:'#E2E8F0', margin:0}}>Neuer Benutzer</h2>
+          <h2 style={{color:'#eef3f7', margin:0}}>Neuer Benutzer</h2>
           <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
 
@@ -159,7 +159,7 @@ function NewUserModal({ onClose, onCreated }) {
         <input className="gx-input" style={m.input} placeholder="ID des direkten Leaders"
                value={form.reports_to} onChange={e => set('reports_to', e.target.value)} />
 
-        {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
+        {msg && <p style={{color: msg.startsWith('✅') ? '#4caf6d' : '#e0665a', fontSize:'13px'}}>{msg}</p>}
 
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
           <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>
@@ -208,7 +208,7 @@ function NewTaskModal({ team, onClose, onCreated }) {
     <div className="gx-modal-overlay" style={m.overlay}>
       <div className="gx-modal" style={{...m.modal, maxWidth:'480px'}}>
         <div style={m.header}>
-          <h2 style={{color:'#E2E8F0', margin:0}}>Neue Aufgabe erstellen</h2>
+          <h2 style={{color:'#eef3f7', margin:0}}>Neue Aufgabe erstellen</h2>
           <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
 
@@ -362,7 +362,7 @@ export default function Dashboard() {
           {next && (
             <p style={s.nextMilestone}>
               Nächster Meilenstein:&nbsp;
-              <span style={{color:'#7DD3FC', fontWeight:'600'}}>{next.title}</span>
+              <span style={{color:'#edb268', fontWeight:'600'}}>{next.title}</span>
             </p>
           )}
         </div>
@@ -383,20 +383,20 @@ export default function Dashboard() {
             </div>
 
             {team.length === 0 ? (
-              <p style={{color:'#64748B'}}>Keine Mitarbeiter gefunden.</p>
+              <p style={{color:'#8fa1ae'}}>Keine Mitarbeiter gefunden.</p>
             ) : team.map(member => {
               const p   = member.progress_percent || 0;
-              const col = p >= 75 ? '#34D399' : p >= 40 ? '#1E40AF' : '#F59E0B';
+              const col = p >= 75 ? '#4caf6d' : p >= 40 ? '#edb268' : '#d9a83e';
               return (
                 <div key={member.id} className="gx-row" style={s.memberRow}>
                   <span style={{fontSize:'24px'}}>👤</span>
                   <div style={{flex:1}}>
                     <div style={{display:'flex', justifyContent:'space-between', marginBottom:'6px'}}>
                       <div>
-                        <span style={{color:'#E2E8F0', fontWeight:'600', fontSize:'14px'}}>
+                        <span style={{color:'#eef3f7', fontWeight:'600', fontSize:'14px'}}>
                           {member.username}
                         </span>
-                        <span style={{color:'#64748B', fontSize:'12px', marginLeft:'8px'}}>
+                        <span style={{color:'#8fa1ae', fontSize:'12px', marginLeft:'8px'}}>
                           {member.department || 'Allgemein'} · {member.user_role}
                         </span>
                       </div>
@@ -434,9 +434,9 @@ export default function Dashboard() {
             <span style={s.badge}>{total - completed} verbleibend</span>
           </div>
           {loading ? (
-            <p style={{color:'#64748B', padding:'16px 0'}}>Laden...</p>
+            <p style={{color:'#8fa1ae', padding:'16px 0'}}>Laden...</p>
           ) : tasks.length === 0 ? (
-            <p style={{color:'#64748B', padding:'16px 0'}}>Keine Aufgaben vorhanden.</p>
+            <p style={{color:'#8fa1ae', padding:'16px 0'}}>Keine Aufgaben vorhanden.</p>
           ) : tasks.slice(0, 5).map(task => (
             <div key={task.id} className="gx-row" style={{...s.taskRow, ...(task === next ? s.taskActive : {})}}>
               <span style={task.is_completed ? s.checkDone : s.checkOpen}>
@@ -444,14 +444,14 @@ export default function Dashboard() {
               </span>
               <div style={{flex:1}}>
                 <div style={{
-                  color: task.is_completed ? '#64748B' : '#E2E8F0',
+                  color: task.is_completed ? '#8fa1ae' : '#eef3f7',
                   textDecoration: task.is_completed ? 'line-through' : 'none',
                   fontWeight:'500', fontSize:'15px',
                 }}>
                   {task.title}
                 </div>
                 {task === next && task.description && (
-                  <div style={{color:'#64748B', fontSize:'12px', marginTop:'2px'}}>{task.description}</div>
+                  <div style={{color:'#8fa1ae', fontSize:'12px', marginTop:'2px'}}>{task.description}</div>
                 )}
               </div>
               {task.is_completed && <span style={s.doneBadge}>erledigt</span>}
@@ -470,7 +470,7 @@ export default function Dashboard() {
             </div>
           ))}
           {tasks.length > 5 && (
-            <div style={{padding:'14px 0', color:'#1E40AF', cursor:'pointer', fontSize:'14px', textAlign:'center'}}
+            <div style={{padding:'14px 0', color:'#edb268', cursor:'pointer', fontSize:'14px', textAlign:'center'}}
                  onClick={() => navigate('/tasks')}>
               Alle {tasks.length} Aufgaben anzeigen →
             </div>
@@ -488,54 +488,54 @@ export default function Dashboard() {
 }
 
 const s = {
-  page:           { display:'flex', minHeight:'100vh', background:'#0A0E18', fontFamily:'Segoe UI, sans-serif' },
-  sidebar:        { width:'240px', background:'#10192B', borderRight:'1px solid #1E293B', display:'flex', flexDirection:'column', padding:'24px 0' },
-  logo:           { color:'#E2E8F0', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
-  navItem:        { color:'#64748B', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
-  navActive:      { color:'#E2E8F0', background:'#1E293B', borderRight:'3px solid #1E40AF' },
-  userInfo:       { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1E293B', marginTop:'auto' },
-  userName:       { color:'#E2E8F0', fontSize:'13px', fontWeight:'600' },
-  userRole:       { color:'#64748B', fontSize:'11px' },
+  page:           { display:'flex', minHeight:'100vh', background:'#0d141c', fontFamily:'Segoe UI, sans-serif' },
+  sidebar:        { width:'240px', background:'#141e29', borderRight:'1px solid #1a2732', display:'flex', flexDirection:'column', padding:'24px 0' },
+  logo:           { color:'#eef3f7', fontWeight:'700', fontSize:'16px', padding:'0 20px 32px' },
+  navItem:        { color:'#8fa1ae', padding:'12px 20px', cursor:'pointer', fontSize:'14px' },
+  navActive:      { color:'#eef3f7', background:'#1a2732', borderRight:'3px solid #edb268' },
+  userInfo:       { display:'flex', alignItems:'center', gap:'12px', padding:'20px', borderTop:'1px solid #1a2732', marginTop:'auto' },
+  userName:       { color:'#eef3f7', fontSize:'13px', fontWeight:'600' },
+  userRole:       { color:'#8fa1ae', fontSize:'11px' },
   main:           { flex:1, padding:'40px' },
   header:         { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'32px' },
-  welcome:        { color:'#E2E8F0', fontSize:'32px', fontWeight:'700', margin:'0 0 6px' },
-  subtitle:       { color:'#64748B', margin:0, fontSize:'15px' },
-  dayBadge:       { background:'#1E293B', color:'#7DD3FC', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
-  newUserBtn:     { background:'#1E293B', color:'#A78BFA', border:'1px solid #4C1D95', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
-  pwBtn:          { background:'#1E293B', color:'#94A3B8', border:'1px solid #334155', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' },
-  logoutBtn:      { background:'#EF4444', color:'#fff', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
+  welcome:        { color:'#eef3f7', fontSize:'32px', fontWeight:'700', margin:'0 0 6px' },
+  subtitle:       { color:'#8fa1ae', margin:0, fontSize:'15px' },
+  dayBadge:       { background:'#1a2732', color:'#edb268', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
+  newUserBtn:     { background:'#1a2732', color:'#A78BFA', border:'1px solid #4C1D95', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  pwBtn:          { background:'#1a2732', color:'#8fa1ae', border:'1px solid #26343f', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' },
+  logoutBtn:      { background:'#e0665a', color:'#fff', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
   card:           { borderRadius:'18px', padding:'24px', marginBottom:'24px' },
   cardHeader:     { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px' },
-  cardTitle:      { color:'#E2E8F0', fontSize:'18px', fontWeight:'700', margin:'0 0 4px' },
-  cardSubtitle:   { color:'#64748B', fontSize:'13px', margin:0 },
-  progressPercent:{ color:'#1E40AF', fontWeight:'700', fontSize:'20px' },
-  progressBar:    { background:'#0A0E18', borderRadius:'4px', height:'8px', overflow:'hidden', marginBottom:'12px' },
-  progressFill:   { background:'#1E40AF', height:'100%', borderRadius:'4px', transition:'width .5s' },
-  nextMilestone:  { color:'#64748B', fontSize:'13px', margin:0 },
-  badge:          { background:'#1E293B', color:'#64748B', padding:'6px 14px', borderRadius:'99px', fontSize:'12px', fontWeight:'600' },
-  newTaskBtn:     { background:'#065F46', color:'#34D399', border:'none', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
-  memberRow:      { display:'flex', alignItems:'center', gap:'12px', padding:'14px 0', borderBottom:'1px solid #1E293B' },
-  viewBtn:        { background:'#1E293B', color:'#7DD3FC', border:'none', padding:'8px 12px', borderRadius:'8px', cursor:'pointer', fontSize:'16px' },
-  resetPwBtn:     { background:'#1E293B', color:'#F59E0B', border:'none', padding:'8px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'14px' },
-  deleteBtn:      { background:'#3B0000', color:'#EF4444', border:'none', padding:'8px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'14px' },
-  taskRow:        { display:'flex', alignItems:'center', gap:'12px', padding:'16px 0', borderBottom:'1px solid #1E293B' },
-  taskActive:     { background:'#0D1F3C', margin:'0 -24px', padding:'16px 24px', borderLeft:'3px solid #1E40AF' },
-  checkDone:      { color:'#34D399', fontSize:'20px', width:'24px', textAlign:'center' },
-  checkOpen:      { color:'#475569', fontSize:'20px', width:'24px', textAlign:'center' },
-  doneBadge:      { color:'#34D399', fontSize:'13px', fontWeight:'600' },
-  activeBadge:    { background:'#1E293B', color:'#7DD3FC', padding:'4px 10px', borderRadius:'6px', fontSize:'12px' },
-  openBadge:      { background:'#1E293B', color:'#64748B', padding:'4px 10px', borderRadius:'6px', fontSize:'12px' },
-  continueBtn:    { background:'#1E40AF', color:'#fff', border:'none', padding:'8px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
-  startBtn:       { background:'#1E293B', color:'#E2E8F0', border:'none', padding:'8px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
+  cardTitle:      { color:'#eef3f7', fontSize:'18px', fontWeight:'700', margin:'0 0 4px' },
+  cardSubtitle:   { color:'#8fa1ae', fontSize:'13px', margin:0 },
+  progressPercent:{ color:'#edb268', fontWeight:'700', fontSize:'20px' },
+  progressBar:    { background:'#0d141c', borderRadius:'4px', height:'8px', overflow:'hidden', marginBottom:'12px' },
+  progressFill:   { background:'#edb268', height:'100%', borderRadius:'4px', transition:'width .5s' },
+  nextMilestone:  { color:'#8fa1ae', fontSize:'13px', margin:0 },
+  badge:          { background:'#1a2732', color:'#8fa1ae', padding:'6px 14px', borderRadius:'99px', fontSize:'12px', fontWeight:'600' },
+  newTaskBtn:     { background:'#0d1f14', color:'#4caf6d', border:'none', padding:'10px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
+  memberRow:      { display:'flex', alignItems:'center', gap:'12px', padding:'14px 0', borderBottom:'1px solid #1a2732' },
+  viewBtn:        { background:'#1a2732', color:'#edb268', border:'none', padding:'8px 12px', borderRadius:'8px', cursor:'pointer', fontSize:'16px' },
+  resetPwBtn:     { background:'#1a2732', color:'#d9a83e', border:'none', padding:'8px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'14px' },
+  deleteBtn:      { background:'#240b08', color:'#e0665a', border:'none', padding:'8px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'14px' },
+  taskRow:        { display:'flex', alignItems:'center', gap:'12px', padding:'16px 0', borderBottom:'1px solid #1a2732' },
+  taskActive:     { background:'#241a06', margin:'0 -24px', padding:'16px 24px', borderLeft:'3px solid #edb268' },
+  checkDone:      { color:'#4caf6d', fontSize:'20px', width:'24px', textAlign:'center' },
+  checkOpen:      { color:'#748998', fontSize:'20px', width:'24px', textAlign:'center' },
+  doneBadge:      { color:'#4caf6d', fontSize:'13px', fontWeight:'600' },
+  activeBadge:    { background:'#1a2732', color:'#edb268', padding:'4px 10px', borderRadius:'6px', fontSize:'12px' },
+  openBadge:      { background:'#1a2732', color:'#8fa1ae', padding:'4px 10px', borderRadius:'6px', fontSize:'12px' },
+  continueBtn:    { background:'#edb268', color:'#fff', border:'none', padding:'8px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
+  startBtn:       { background:'#1a2732', color:'#eef3f7', border:'none', padding:'8px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
 };
 
 const m = {
   overlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
   modal:   { borderRadius:'18px', padding:'32px', width:'100%', maxWidth:'440px', boxSizing:'border-box' },
   header:  { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' },
-  close:   { background:'none', border:'none', color:'#64748B', fontSize:'20px', cursor:'pointer' },
-  label:   { color:'#94A3B8', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
-  input:   { width:'100%', padding:'12px 16px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'14px', outline:'none', marginBottom:'16px', boxSizing:'border-box' },
-  btn:     { background:'#1E40AF', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
-  cancel:  { background:'#1E293B', color:'#64748B', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
+  close:   { background:'none', border:'none', color:'#8fa1ae', fontSize:'20px', cursor:'pointer' },
+  label:   { color:'#8fa1ae', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },
+  input:   { width:'100%', padding:'12px 16px', background:'#0d141c', border:'1px solid #1a2732', borderRadius:'8px', color:'#eef3f7', fontSize:'14px', outline:'none', marginBottom:'16px', boxSizing:'border-box' },
+  btn:     { background:'#edb268', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
+  cancel:  { background:'#1a2732', color:'#8fa1ae', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
 };
