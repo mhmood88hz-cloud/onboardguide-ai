@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -32,9 +33,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+DEFAULT_ORIGINS = [
+    "http://localhost:3000",
+    "https://onboardguide-ai.vercel.app",
+    "https://onboardguide.leadspeak.de",
+]
+_extra_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # ← React URL
+    allow_origins=DEFAULT_ORIGINS + _extra_origins,
+    allow_origin_regex=r"https://onboardguide-ai.*\.vercel\.app",  # Vercel preview deployments
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-Workflow-Trace"],
