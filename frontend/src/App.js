@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login     from './pages/Login';
+import Signup    from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Chat      from './pages/Chat';
 import Tasks     from './pages/Tasks';
 import Documents from './pages/Documents';
+import Absences  from './pages/Absences';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -14,11 +16,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login"  element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/chat"      element={<PrivateRoute><Chat /></PrivateRoute>} />
         <Route path="/tasks"     element={<PrivateRoute><Tasks /></PrivateRoute>} />
         <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
+        <Route path="/abwesenheiten" element={<PrivateRoute><Absences /></PrivateRoute>} />
         <Route path="*"          element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

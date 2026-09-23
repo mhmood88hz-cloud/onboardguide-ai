@@ -2,6 +2,33 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 
+// Bilder liegen hinter Auth (JWT), <img src> kann keinen Header mitschicken –
+// deshalb per axios als Blob laden und als Object-URL anzeigen.
+function AuthImage({ url, alt }) {
+  const [src, setSrc] = useState(null);
+
+  useEffect(() => {
+    let objectUrl;
+    let cancelled = false;
+    client.get(url, { responseType: 'blob' })
+      .then(res => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(res.data);
+        setSrc(objectUrl);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [url]);
+
+  if (!src) {
+    return <div style={s.imgPlaceholder}>Bild wird geladen...</div>;
+  }
+  return <img src={src} alt={alt} style={s.refImage} />;
+}
+
 export default function Chat() {
   const navigate               = useNavigate();
   const username               = localStorage.getItem('username');
@@ -49,12 +76,13 @@ export default function Chat() {
         text:       res.data.ai_response,
         sources:    res.data.chunk_stats      || [],
         comparison: res.data.model_comparison || [],
+        images:     res.data.images           || [],
       }]);
     } catch {
       setMessages(prev => [...prev, {
         role: 'ai',
         text: 'Fehler beim Abrufen der Antwort. Bitte versuche es erneut.',
-        sources: [], comparison: [],
+        sources: [], comparison: [], images: [],
       }]);
     } finally {
       setLoading(false);
@@ -62,17 +90,18 @@ export default function Chat() {
   };
 
   return (
-    <div style={s.page}>
+    <div className="gx-aurora" style={s.page}>
       {/* Sidebar */}
       <div style={s.sidebar}>
         <div style={s.logo}>🤖 OnboardGuide AI</div>
         <nav>
-          <div style={s.navItem} onClick={() => navigate('/dashboard')}>📊 Dashboard</div>
-          <div style={{...s.navItem, ...s.navActive}}>💬 Chat-Assistent</div>
-          <div style={s.navItem} onClick={() => navigate('/tasks')}>☰ Meine Aufgaben</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/dashboard')}>📊 Dashboard</div>
+          <div className="gx-nav-item" style={{...s.navItem, ...s.navActive}}>💬 Chat-Assistent</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/tasks')}>☰ Meine Aufgaben</div>
           {role === 'Verwaltung' && (
-            <div style={s.navItem} onClick={() => navigate('/documents')}>📄 Dokumente</div>
+            <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/documents')}>📄 Dokumente</div>
           )}
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/abwesenheiten')}>🌴 Abwesenheiten</div>
         </nav>
         <div style={s.userInfo}>
           <span style={{fontSize:'28px'}}>👤</span>
@@ -131,11 +160,29 @@ export default function Chat() {
                 <div style={s.aiRow}>
                   <div style={s.aiAvatar}>🤖</div>
                   <div style={{flex:1}}>
-                    <div style={s.aiBubble}>
+                    <div className="gx-card" style={s.aiBubble}>
                       <p style={{margin:0, whiteSpace:'pre-wrap', lineHeight:'1.7'}}>
                         {msg.text}
                       </p>
                     </div>
+
+                    {/* Referenzbilder aus den Dokumenten (Screenshots zur Frage) - deaktiviert */}
+                    {false && msg.images && msg.images.length > 0 && (
+                      <div style={s.sourcesBox}>
+                        <div style={s.sourcesLabel}>🖼️ REFERENZBILD{msg.images.length > 1 ? 'ER' : ''}</div>
+                        <div style={{display:'flex', gap:'12px', flexWrap:'wrap'}}>
+                          {msg.images.map((img, j) => (
+                            <div key={j}>
+                              <AuthImage url={img.url} alt={`${img.title || 'Bild'} – ${img.document} Seite ${img.page}`} />
+                              <div style={s.imgTitle}>{img.title}</div>
+                              <div style={s.imgCaption}>
+                                {(img.document || '').substring(0, 30)} · Seite {img.page}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* RAG Similarity Scores */}
                     {msg.sources && msg.sources.length > 0 && (
@@ -214,6 +261,7 @@ export default function Chat() {
         {/* Input Area */}
         <div style={s.inputArea}>
           <input
+            className="gx-input"
             style={s.input}
             placeholder="Stelle eine Frage..."
             value={question}
@@ -221,6 +269,7 @@ export default function Chat() {
             onKeyDown={e => e.key === 'Enter' && sendMessage(false)}
           />
           <button
+            className="gx-btn"
             style={s.compareBtn}
             onClick={() => sendMessage(true)}
             disabled={loading}
@@ -229,6 +278,7 @@ export default function Chat() {
             ⚡ Vergleichen
           </button>
           <button
+            className="gx-btn"
             style={s.sendBtn}
             onClick={() => sendMessage(false)}
             disabled={loading}
@@ -262,10 +312,14 @@ const s = {
   compareBadge: { display:'inline-block', marginLeft:'10px', background:'#2D1B00', color:'#F59E0B', padding:'2px 8px', borderRadius:'4px', fontSize:'11px', fontWeight:'600' },
   aiRow:        { display:'flex', gap:'12px', alignItems:'flex-start' },
   aiAvatar:     { fontSize:'28px', marginTop:'4px', flexShrink:0 },
-  aiBubble:     { background:'#10192B', border:'1px solid #1E293B', color:'#E2E8F0', padding:'16px 20px', borderRadius:'4px 16px 16px 16px', flex:1, fontSize:'14px', lineHeight:'1.6' },
+  aiBubble:     { color:'#E2E8F0', padding:'16px 20px', borderRadius:'4px 16px 16px 16px', flex:1, fontSize:'14px', lineHeight:'1.6' },
   sourcesBox:   { marginTop:'12px' },
   sourcesLabel: { color:'#475569', fontSize:'10px', fontWeight:'700', letterSpacing:'1px', marginBottom:'8px' },
   sourceCard:   { background:'#10192B', border:'1px solid #1E293B', borderRadius:'8px', padding:'10px', minWidth:'180px' },
+  refImage:     { maxWidth:'340px', maxHeight:'340px', borderRadius:'8px', border:'1px solid #1E293B', display:'block' },
+  imgPlaceholder: { width:'340px', height:'120px', display:'flex', alignItems:'center', justifyContent:'center', background:'#10192B', border:'1px solid #1E293B', borderRadius:'8px', color:'#475569', fontSize:'12px' },
+  imgTitle:     { color:'#E2E8F0', fontSize:'12px', fontWeight:'600', marginTop:'8px' },
+  imgCaption:   { color:'#64748B', fontSize:'11px', marginTop:'2px' },
   scoreBarWrap: { background:'#0A0E18', borderRadius:'4px', height:'6px', overflow:'hidden', marginBottom:'4px' },
   scoreBarFill: { height:'100%', borderRadius:'4px', transition:'width .8s' },
   compCard:     { background:'#0A0E18', border:'1px solid', borderRadius:'8px', padding:'12px', flex:1 },

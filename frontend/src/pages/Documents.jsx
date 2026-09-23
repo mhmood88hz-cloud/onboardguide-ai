@@ -81,17 +81,18 @@ export default function Documents() {
   };
 
   return (
-    <div style={s.page}>
+    <div className="gx-aurora" style={s.page}>
       {/* Sidebar */}
       <div style={s.sidebar}>
         <div style={s.logo}>🤖 OnboardGuide AI</div>
         <nav>
-          <div style={s.navItem} onClick={() => navigate('/dashboard')}>📊 Dashboard</div>
-          <div style={s.navItem} onClick={() => navigate('/chat')}>💬 Chat-Assistent</div>
-          <div style={s.navItem} onClick={() => navigate('/tasks')}>☰ Meine Aufgaben</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/dashboard')}>📊 Dashboard</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/chat')}>💬 Chat-Assistent</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/tasks')}>☰ Meine Aufgaben</div>
           {role === 'Verwaltung' && (
-            <div style={{...s.navItem, ...s.navActive}}>📄 Dokumente</div>
+            <div className="gx-nav-item" style={{...s.navItem, ...s.navActive}}>📄 Dokumente</div>
           )}
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/abwesenheiten')}>🌴 Abwesenheiten</div>
         </nav>
         <div style={s.userInfo}>
           <span style={{fontSize:'28px'}}>👤</span>
@@ -110,7 +111,7 @@ export default function Documents() {
             <p style={s.subtitle}>Hochgeladene Firmendokumente</p>
           </div>
           {role === 'Verwaltung' && (
-            <button style={s.uploadBtn} onClick={() => setShowForm(!showForm)}>
+            <button className="gx-btn" style={s.uploadBtn} onClick={() => setShowForm(!showForm)}>
               + Hochladen
             </button>
           )}
@@ -118,14 +119,16 @@ export default function Documents() {
 
         {/* Upload Form */}
         {showForm && (
-          <div style={s.form}>
+          <div className="gx-card" style={s.form}>
             <input
+              className="gx-input"
               style={s.input}
               placeholder="Dokumenttitel"
               value={title}
               onChange={e => setTitle(e.target.value)}
             />
             <select
+              className="gx-input"
               style={s.input}
               value={category}
               onChange={e => setCategory(e.target.value)}
@@ -137,6 +140,7 @@ export default function Documents() {
             </select>
             {category === '__new__' && (
               <input
+                className="gx-input"
                 style={s.input}
                 placeholder="Name der neuen Kategorie"
                 value={newCategory}
@@ -144,6 +148,7 @@ export default function Documents() {
               />
             )}
             <select
+              className="gx-input"
               style={s.input}
               value={uploadedBy}
               onChange={e => setUploadedBy(e.target.value)}
@@ -162,14 +167,14 @@ export default function Documents() {
               style={{display:'none'}}
               onChange={e => setFile(e.target.files[0])}
             />
-            <button style={s.fileBtn} onClick={() => fileRef.current.click()}>
+            <button className="gx-btn" style={s.fileBtn} onClick={() => fileRef.current.click()}>
               {file ? `📄 ${file.name}` : '📁 Datei auswählen'}
             </button>
             <div style={{display:'flex', gap:'12px'}}>
-              <button style={s.submitBtn} onClick={handleUpload} disabled={uploading}>
+              <button className="gx-btn" style={s.submitBtn} onClick={handleUpload} disabled={uploading}>
                 {uploading ? 'Wird hochgeladen...' : 'Hochladen'}
               </button>
-              <button style={s.cancelBtn} onClick={() => setShowForm(false)}>
+              <button className="gx-btn" style={s.cancelBtn} onClick={() => setShowForm(false)}>
                 Abbrechen
               </button>
             </div>
@@ -177,7 +182,7 @@ export default function Documents() {
         )}
 
         {/* Documents Table */}
-        <div style={s.table}>
+        <div className="gx-card" style={s.table}>
           <div style={s.tableHeader}>
             <span style={{flex:3}}>DOKUMENT</span>
             <span style={{flex:1}}>KATEGORIE</span>
@@ -193,7 +198,7 @@ export default function Documents() {
           ) : docs.map(doc => {
             const cat = categoryColor(doc.category);
             return (
-              <div key={doc.id} style={s.tableRow}>
+              <div key={doc.id} className="gx-row" style={s.tableRow}>
                 <div style={{flex:3, display:'flex', alignItems:'center', gap:'12px'}}>
                   <span style={{color:'#1E40AF', fontSize:'20px'}}>📄</span>
                   <span style={{color:'#E2E8F0', fontWeight:'500'}}>{doc.title}</span>
@@ -246,12 +251,12 @@ const s = {
   title:       { color:'#E2E8F0', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
   subtitle:    { color:'#64748B', margin:0 },
   uploadBtn:   { background:'#1E40AF', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'14px' },
-  form:        { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', padding:'24px', marginBottom:'24px', display:'flex', flexDirection:'column', gap:'12px' },
+  form:        { borderRadius:'16px', padding:'24px', marginBottom:'24px', display:'flex', flexDirection:'column', gap:'12px' },
   input:       { padding:'12px 16px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'14px', outline:'none' },
   fileBtn:     { padding:'12px 16px', background:'#0A0E18', border:'1px dashed #334155', borderRadius:'8px', color:'#64748B', cursor:'pointer', textAlign:'left', fontSize:'14px' },
   submitBtn:   { background:'#1E40AF', color:'#fff', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
   cancelBtn:   { background:'#1E293B', color:'#64748B', border:'none', padding:'12px 24px', borderRadius:'8px', cursor:'pointer' },
-  table:       { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', overflow:'hidden' },
+  table:       { borderRadius:'16px', overflow:'hidden' },
   tableHeader: { display:'flex', padding:'16px 20px', borderBottom:'1px solid #1E293B', color:'#475569', fontSize:'11px', fontWeight:'700', letterSpacing:'1px' },
   tableRow:    { display:'flex', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #0F172A', gap:'12px' },
 };

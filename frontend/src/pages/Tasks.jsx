@@ -84,17 +84,18 @@ export default function Tasks() {
   const canManage = role === 'Leader' || role === 'Verwaltung';
 
   return (
-    <div style={s.page}>
+    <div className="gx-aurora" style={s.page}>
       {/* Sidebar */}
       <div style={s.sidebar}>
         <div style={s.logo}>🤖 OnboardGuide AI</div>
         <nav>
-          <div style={s.navItem} onClick={() => navigate('/dashboard')}>📊 Dashboard</div>
-          <div style={s.navItem} onClick={() => navigate('/chat')}>💬 Chat-Assistent</div>
-          <div style={{...s.navItem, ...s.navActive}}>☰ Meine Aufgaben</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/dashboard')}>📊 Dashboard</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/chat')}>💬 Chat-Assistent</div>
+          <div className="gx-nav-item" style={{...s.navItem, ...s.navActive}}>☰ Meine Aufgaben</div>
           {role === 'Verwaltung' && (
-            <div style={s.navItem} onClick={() => navigate('/documents')}>📄 Dokumente</div>
+            <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/documents')}>📄 Dokumente</div>
           )}
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/abwesenheiten')}>🌴 Abwesenheiten</div>
         </nav>
         <div style={s.userInfo}>
           <span style={{fontSize:'28px'}}>👤</span>
@@ -120,7 +121,7 @@ export default function Tasks() {
             <p style={s.subtitle}>Dein Onboarding-Fortschritt</p>
           </div>
           {canManage && (
-            <button style={s.newBtn} onClick={() => setShowNewTask(!showNewTask)}>
+            <button className="gx-btn" style={s.newBtn} onClick={() => setShowNewTask(!showNewTask)}>
               + Neue Aufgabe
             </button>
           )}
@@ -128,25 +129,26 @@ export default function Tasks() {
 
         {/* Neue Aufgabe Form */}
         {showNewTask && canManage && (
-          <div style={s.form}>
+          <div className="gx-card" style={s.form}>
             <h3 style={{color:'#E2E8F0', margin:'0 0 16px'}}>
               Neue Aufgabe für {viewName}
             </h3>
             <input
+              className="gx-input"
               style={s.input}
               placeholder="Aufgabentitel"
               value={newTitle}
               onChange={e => setNewTitle(e.target.value)}
             />
-            <select style={s.input} value={newType} onChange={e => setNewType(e.target.value)}>
+            <select className="gx-input" style={s.input} value={newType} onChange={e => setNewType(e.target.value)}>
               <option value="Onboarding">Onboarding</option>
               <option value="Projekt">Projekt</option>
             </select>
             <div style={{display:'flex', gap:'12px'}}>
-              <button style={s.createBtn} onClick={handleCreateTask} disabled={creating}>
+              <button className="gx-btn" style={s.createBtn} onClick={handleCreateTask} disabled={creating}>
                 {creating ? 'Wird erstellt...' : 'Aufgabe erstellen'}
               </button>
-              <button style={s.cancelBtn} onClick={() => setShowNewTask(false)}>
+              <button className="gx-btn" style={s.cancelBtn} onClick={() => setShowNewTask(false)}>
                 Abbrechen
               </button>
             </div>
@@ -154,7 +156,7 @@ export default function Tasks() {
         )}
 
         {/* Progress */}
-        <div style={s.progressCard}>
+        <div className="gx-card gx-card--hover" style={s.progressCard}>
           <div style={s.progressHeader}>
             <span style={s.progressLabel}>Gesamtfortschritt</span>
             <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
@@ -168,13 +170,13 @@ export default function Tasks() {
         </div>
 
         {/* Tasks */}
-        <div style={s.card}>
+        <div className="gx-card" style={s.card}>
           {loading ? (
             <p style={{color:'#64748B'}}>Laden...</p>
           ) : tasks.length === 0 ? (
             <p style={{color:'#64748B'}}>Keine Aufgaben vorhanden.</p>
           ) : tasks.map(task => (
-            <div key={task.id} style={s.taskRow}>
+            <div key={task.id} className="gx-row" style={s.taskRow}>
               <span style={task.is_completed ? s.checkDone : s.checkOpen}>
                 {task.is_completed ? '✓' : '○'}
               </span>
@@ -196,10 +198,10 @@ export default function Tasks() {
               </span>
               {!task.is_completed && (
                 <>
-                  <button style={s.explainBtn} onClick={() => handleExplain(task.id)}>
+                  <button className="gx-btn" style={s.explainBtn} onClick={() => handleExplain(task.id)}>
                     Erklären
                   </button>
-                  <button style={s.completeBtn} onClick={() => handleComplete(task.id)}>
+                  <button className="gx-btn" style={s.completeBtn} onClick={() => handleComplete(task.id)}>
                     Erledigen
                   </button>
                 </>
@@ -212,13 +214,13 @@ export default function Tasks() {
 
       {/* Explain Modal */}
       {(explain || explainLoading) && (
-        <div style={s.modal}>
-          <div style={s.modalCard}>
+        <div className="gx-modal-overlay" style={s.modal}>
+          <div className="gx-modal" style={s.modalCard}>
             <div style={s.modalHeader}>
               <h2 style={{color:'#E2E8F0', margin:0}}>
                 {explain ? explain.task_title : 'Erklärung wird geladen...'}
               </h2>
-              <button style={s.closeBtn} onClick={() => setExplain(null)}>✕</button>
+              <button className="gx-btn" style={s.closeBtn} onClick={() => setExplain(null)}>✕</button>
             </div>
             {explainLoading && <p style={{color:'#64748B'}}>Wird generiert...</p>}
             {explain && (
@@ -263,17 +265,17 @@ const s = {
   title:          { color:'#E2E8F0', fontSize:'28px', fontWeight:'700', margin:'0 0 4px' },
   subtitle:       { color:'#64748B', margin:0 },
   newBtn:         { background:'#065F46', color:'#34D399', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px', height:'fit-content' },
-  form:           { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', padding:'24px', marginBottom:'24px', display:'flex', flexDirection:'column', gap:'12px' },
+  form:           { borderRadius:'16px', padding:'24px', marginBottom:'24px', display:'flex', flexDirection:'column', gap:'12px' },
   input:          { padding:'12px 16px', background:'#0A0E18', border:'1px solid #1E293B', borderRadius:'8px', color:'#E2E8F0', fontSize:'14px', outline:'none' },
   createBtn:      { background:'#065F46', color:'#34D399', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
   cancelBtn:      { background:'#1E293B', color:'#64748B', border:'none', padding:'12px 20px', borderRadius:'8px', cursor:'pointer' },
-  progressCard:   { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', padding:'24px', marginBottom:'24px' },
+  progressCard:   { borderRadius:'16px', padding:'24px', marginBottom:'24px' },
   progressHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' },
   progressLabel:  { color:'#E2E8F0', fontWeight:'700', fontSize:'16px' },
   progressPercent:{ color:'#1E40AF', fontWeight:'700', fontSize:'18px' },
   progressBar:    { background:'#0A0E18', borderRadius:'4px', height:'8px', overflow:'hidden' },
   progressFill:   { background:'#1E40AF', height:'100%', borderRadius:'4px', transition:'width .5s' },
-  card:           { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', overflow:'hidden' },
+  card:           { borderRadius:'16px', overflow:'hidden' },
   taskRow:        { display:'flex', alignItems:'center', gap:'12px', padding:'16px 20px', borderBottom:'1px solid #1E293B' },
   checkDone:      { color:'#34D399', fontSize:'20px', width:'24px' },
   checkOpen:      { color:'#475569', fontSize:'20px', width:'24px' },
@@ -282,7 +284,7 @@ const s = {
   completeBtn:    { background:'#065F46', color:'#34D399', border:'none', padding:'8px 16px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   doneBadge:      { color:'#34D399', fontSize:'13px', fontWeight:'600' },
   modal:          { position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
-  modalCard:      { background:'#10192B', border:'1px solid #1E293B', borderRadius:'16px', padding:'32px', maxWidth:'600px', width:'90%', maxHeight:'80vh', overflowY:'auto' },
+  modalCard:      { borderRadius:'18px', padding:'32px', maxWidth:'600px', width:'90%', maxHeight:'80vh', overflowY:'auto' },
   modalHeader:    { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px' },
   closeBtn:       { background:'none', border:'none', color:'#64748B', fontSize:'20px', cursor:'pointer' },
   step:           { display:'flex', gap:'12px', alignItems:'flex-start', marginBottom:'12px' },

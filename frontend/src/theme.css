@@ -1,0 +1,134 @@
+/* ── OnboardGuide AI — Apple-HIG-inspired surface layer ──────────────────
+   Adds glass materials, depth and motion on top of the existing dark
+   palette without touching any component's colors/spacing/logic. Applied
+   via className alongside the existing inline `style` objects. */
+
+:root {
+  --gx-blue:   #3B82F6;
+  --gx-blue-2: #1E40AF;
+  --gx-radius-lg: 20px;
+  --gx-radius-md: 14px;
+  --gx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* { -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Segoe UI', 'Inter', 'Roboto', sans-serif;
+  background: #0A0E18;
+}
+
+::selection { background: rgba(59, 130, 246, 0.35); color: #fff; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); background-clip: padding-box; }
+
+/* Soft animated aurora glow behind full-page layouts — pure CSS, no assets */
+.gx-aurora { position: relative; isolation: isolate; }
+.gx-aurora::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(600px circle at 12% 8%,  rgba(59, 130, 246, 0.16), transparent 60%),
+    radial-gradient(560px circle at 88% 18%, rgba(167, 139, 250, 0.12), transparent 60%),
+    radial-gradient(640px circle at 30% 95%, rgba(52, 211, 153, 0.08), transparent 60%);
+  pointer-events: none;
+  animation: gx-drift 22s ease-in-out infinite alternate;
+}
+@keyframes gx-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(0, -2%, 0) scale(1.05); }
+}
+
+/* Glass card — frosted surface with layered depth, replaces flat borders */
+.gx-card {
+  background: linear-gradient(180deg, rgba(23, 34, 56, 0.72), rgba(16, 25, 43, 0.72));
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 20px 40px -20px rgba(0, 0, 0, 0.55);
+  border-radius: var(--gx-radius-lg);
+  transition: transform 0.35s var(--gx-ease), box-shadow 0.35s var(--gx-ease), border-color 0.35s;
+  animation: gx-rise 0.5s var(--gx-ease) both;
+}
+.gx-card--hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 28px 54px -22px rgba(0, 0, 0, 0.65);
+}
+@keyframes gx-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.gx-modal-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: gx-fade 0.2s ease both;
+}
+@keyframes gx-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.gx-modal {
+  background: linear-gradient(180deg, rgba(26, 38, 61, 0.92), rgba(15, 23, 42, 0.96));
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.7);
+  animation: gx-pop 0.25s var(--gx-ease) both;
+}
+@keyframes gx-pop {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Buttons — spring-like press feedback, no layout changes */
+.gx-btn {
+  transition: transform 0.15s var(--gx-ease), filter 0.15s var(--gx-ease), box-shadow 0.15s var(--gx-ease);
+  will-change: transform;
+}
+.gx-btn:hover:not(:disabled)   { filter: brightness(1.08); transform: translateY(-1px); }
+.gx-btn:active:not(:disabled)  { transform: translateY(0) scale(0.97); filter: brightness(0.96); }
+.gx-btn:disabled { cursor: default; }
+.gx-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45);
+}
+
+/* Inputs — soft focus glow instead of hard border swap */
+.gx-input {
+  transition: border-color 0.2s var(--gx-ease), box-shadow 0.2s var(--gx-ease), background 0.2s var(--gx-ease);
+}
+.gx-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+}
+
+.gx-row {
+  transition: background 0.2s var(--gx-ease);
+}
+.gx-row:hover { background: rgba(148, 163, 184, 0.05); }
+
+.gx-nav-item {
+  border-radius: 10px;
+  transition: background 0.2s var(--gx-ease), color 0.2s var(--gx-ease), transform 0.2s var(--gx-ease);
+}
+.gx-nav-item:hover { background: rgba(148, 163, 184, 0.08); color: #E2E8F0; transform: translateX(2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .gx-aurora::before, .gx-card, .gx-modal, .gx-modal-overlay, .gx-btn, .gx-nav-item { animation: none; transition: none; }
+}

@@ -24,20 +24,20 @@ function ChangePwModal({ onClose }) {
   };
 
   return (
-    <div style={m.overlay}>
-      <div style={m.modal}>
+    <div className="gx-modal-overlay" style={m.overlay}>
+      <div className="gx-modal" style={m.modal}>
         <div style={m.header}>
           <h2 style={{color:'#E2E8F0', margin:0}}>Passwort ändern</h2>
-          <button style={m.close} onClick={onClose}>✕</button>
+          <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
         <label style={m.label}>Aktuelles Passwort</label>
-        <input style={m.input} type="password" value={oldPw} onChange={e => setOldPw(e.target.value)} />
+        <input className="gx-input" style={m.input} type="password" value={oldPw} onChange={e => setOldPw(e.target.value)} />
         <label style={m.label}>Neues Passwort</label>
-        <input style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
+        <input className="gx-input" style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
         {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
-          <button style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gespeichert...' : 'Ändern'}</button>
-          <button style={m.cancel} onClick={onClose}>Abbrechen</button>
+          <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gespeichert...' : 'Ändern'}</button>
+          <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
       </div>
     </div>
@@ -65,21 +65,21 @@ function ResetPwModal({ member, onClose }) {
   };
 
   return (
-    <div style={m.overlay}>
-      <div style={m.modal}>
+    <div className="gx-modal-overlay" style={m.overlay}>
+      <div className="gx-modal" style={m.modal}>
         <div style={m.header}>
           <h2 style={{color:'#E2E8F0', margin:0}}>Passwort zurücksetzen</h2>
-          <button style={m.close} onClick={onClose}>✕</button>
+          <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
         <p style={{color:'#64748B', marginBottom:'16px', fontSize:'14px'}}>
           Neues Passwort für <b style={{color:'#E2E8F0'}}>{member.username}</b>
         </p>
         <label style={m.label}>Neues Passwort</label>
-        <input style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
+        <input className="gx-input" style={m.input} type="password" value={newPw} onChange={e => setNewPw(e.target.value)} />
         {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
-          <button style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gesetzt...' : 'Zurücksetzen'}</button>
-          <button style={m.cancel} onClick={onClose}>Abbrechen</button>
+          <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>{loading ? 'Wird gesetzt...' : 'Zurücksetzen'}</button>
+          <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
       </div>
     </div>
@@ -121,51 +121,51 @@ function NewUserModal({ onClose, onCreated }) {
   };
 
   return (
-    <div style={m.overlay}>
-      <div style={{...m.modal, maxWidth:'480px', maxHeight:'90vh', overflowY:'auto'}}>
+    <div className="gx-modal-overlay" style={m.overlay}>
+      <div className="gx-modal" style={{...m.modal, maxWidth:'480px', maxHeight:'90vh', overflowY:'auto'}}>
         <div style={m.header}>
           <h2 style={{color:'#E2E8F0', margin:0}}>Neuer Benutzer</h2>
-          <button style={m.close} onClick={onClose}>✕</button>
+          <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
 
         <label style={m.label}>Benutzername *</label>
-        <input style={m.input} placeholder="z.B. max_mueller"
+        <input className="gx-input" style={m.input} placeholder="z.B. max_mueller"
                value={form.username} onChange={e => set('username', e.target.value)} />
 
         <label style={m.label}>E-Mail *</label>
-        <input style={m.input} placeholder="max@firma.de" type="email"
+        <input className="gx-input" style={m.input} placeholder="max@firma.de" type="email"
                value={form.email} onChange={e => set('email', e.target.value)} />
 
         <label style={m.label}>Passwort *</label>
-        <input style={m.input} type="password" placeholder="Mindestens 6 Zeichen"
+        <input className="gx-input" style={m.input} type="password" placeholder="Mindestens 6 Zeichen"
                value={form.password} onChange={e => set('password', e.target.value)} />
 
         <label style={m.label}>Rolle</label>
-        <select style={m.input} value={form.user_role} onChange={e => set('user_role', e.target.value)}>
+        <select className="gx-input" style={m.input} value={form.user_role} onChange={e => set('user_role', e.target.value)}>
           <option value="Mitarbeiter">Mitarbeiter</option>
           <option value="Leader">Leader</option>
           <option value="Verwaltung">Verwaltung</option>
         </select>
 
         <label style={m.label}>Abteilung</label>
-        <input style={m.input} placeholder="z.B. IT, Marketing, HR"
+        <input className="gx-input" style={m.input} placeholder="z.B. IT, Marketing, HR"
                value={form.department} onChange={e => set('department', e.target.value)} />
 
         <label style={m.label}>Projekt</label>
-        <input style={m.input} placeholder="z.B. Alpha-Projekt"
+        <input className="gx-input" style={m.input} placeholder="z.B. Alpha-Projekt"
                value={form.assigned_project} onChange={e => set('assigned_project', e.target.value)} />
 
         <label style={m.label}>Leader ID (reports_to)</label>
-        <input style={m.input} placeholder="ID des direkten Leaders"
+        <input className="gx-input" style={m.input} placeholder="ID des direkten Leaders"
                value={form.reports_to} onChange={e => set('reports_to', e.target.value)} />
 
         {msg && <p style={{color: msg.startsWith('✅') ? '#34D399' : '#EF4444', fontSize:'13px'}}>{msg}</p>}
 
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
-          <button style={m.btn} onClick={handle} disabled={loading}>
+          <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>
             {loading ? 'Wird erstellt...' : 'Benutzer anlegen'}
           </button>
-          <button style={m.cancel} onClick={onClose}>Abbrechen</button>
+          <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
       </div>
     </div>
@@ -205,34 +205,34 @@ function NewTaskModal({ team, onClose, onCreated }) {
   };
 
   return (
-    <div style={m.overlay}>
-      <div style={{...m.modal, maxWidth:'480px'}}>
+    <div className="gx-modal-overlay" style={m.overlay}>
+      <div className="gx-modal" style={{...m.modal, maxWidth:'480px'}}>
         <div style={m.header}>
           <h2 style={{color:'#E2E8F0', margin:0}}>Neue Aufgabe erstellen</h2>
-          <button style={m.close} onClick={onClose}>✕</button>
+          <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
         </div>
 
         <label style={m.label}>Titel *</label>
-        <input style={m.input} placeholder="z.B. VPN einrichten"
+        <input className="gx-input" style={m.input} placeholder="z.B. VPN einrichten"
                value={form.title} onChange={e => set('title', e.target.value)} />
 
         <label style={m.label}>Beschreibung</label>
-        <textarea style={{...m.input, height:'80px', resize:'vertical'}}
+        <textarea className="gx-input" style={{...m.input, height:'80px', resize:'vertical'}}
                   placeholder="Was muss genau gemacht werden?"
                   value={form.description} onChange={e => set('description', e.target.value)} />
 
         <label style={m.label}>Typ</label>
-        <select style={m.input} value={form.task_type} onChange={e => set('task_type', e.target.value)}>
+        <select className="gx-input" style={m.input} value={form.task_type} onChange={e => set('task_type', e.target.value)}>
           <option value="Onboarding">Onboarding</option>
           <option value="Projekt">Projekt</option>
         </select>
 
         <label style={m.label}>Projektname</label>
-        <input style={m.input} placeholder="z.B. Alpha-Projekt (optional)"
+        <input className="gx-input" style={m.input} placeholder="z.B. Alpha-Projekt (optional)"
                value={form.project_name} onChange={e => set('project_name', e.target.value)} />
 
         <label style={m.label}>Mitarbeiter *</label>
-        <select style={m.input} value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)}>
+        <select className="gx-input" style={m.input} value={form.assigned_to} onChange={e => set('assigned_to', e.target.value)}>
           <option value="">Bitte auswählen</option>
           {team.map(u => (
             <option key={u.id} value={u.id}>
@@ -242,10 +242,10 @@ function NewTaskModal({ team, onClose, onCreated }) {
         </select>
 
         <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
-          <button style={m.btn} onClick={handle} disabled={loading}>
+          <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>
             {loading ? 'Wird erstellt...' : 'Aufgabe erstellen'}
           </button>
-          <button style={m.cancel} onClick={onClose}>Abbrechen</button>
+          <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
         </div>
       </div>
     </div>
@@ -303,17 +303,18 @@ export default function Dashboard() {
   const canManageTeam = role === 'Leader' || role === 'Verwaltung';
 
   return (
-    <div style={s.page}>
+    <div className="gx-aurora" style={s.page}>
       {/* Sidebar */}
       <div style={s.sidebar}>
         <div style={s.logo}>🤖 OnboardGuide AI</div>
         <nav>
-          <div style={{...s.navItem, ...s.navActive}}>📊 Dashboard</div>
-          <div style={s.navItem} onClick={() => navigate('/chat')}>💬 Chat-Assistent</div>
-          <div style={s.navItem} onClick={() => navigate('/tasks')}>☰ Meine Aufgaben</div>
+          <div className="gx-nav-item" style={{...s.navItem, ...s.navActive}}>📊 Dashboard</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/chat')}>💬 Chat-Assistent</div>
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/tasks')}>☰ Meine Aufgaben</div>
           {role === 'Verwaltung' && (
-            <div style={s.navItem} onClick={() => navigate('/documents')}>📄 Dokumente</div>
+            <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/documents')}>📄 Dokumente</div>
           )}
+          <div className="gx-nav-item" style={s.navItem} onClick={() => navigate('/abwesenheiten')}>🌴 Abwesenheiten</div>
         </nav>
         <div style={s.userInfo}>
           <span style={{fontSize:'28px'}}>👤</span>
@@ -335,19 +336,19 @@ export default function Dashboard() {
           <div style={{display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap'}}>
             <div style={s.dayBadge}>📅 Onboarding läuft</div>
             {role === 'Verwaltung' && (
-              <button style={s.newUserBtn} onClick={() => setShowNewUser(true)}>
+              <button className="gx-btn" style={s.newUserBtn} onClick={() => setShowNewUser(true)}>
                 👤 Neuer Benutzer
               </button>
             )}
-            <button style={s.pwBtn} onClick={() => setShowChangePw(true)}>🔑 Passwort</button>
-            <button style={s.logoutBtn} onClick={() => { localStorage.clear(); navigate('/login'); }}>
+            <button className="gx-btn" style={s.pwBtn} onClick={() => setShowChangePw(true)}>🔑 Passwort</button>
+            <button className="gx-btn" style={s.logoutBtn} onClick={() => { localStorage.clear(); navigate('/login'); }}>
               Ausloggen
             </button>
           </div>
         </div>
 
         {/* Progress Card */}
-        <div style={s.card}>
+        <div className="gx-card gx-card--hover" style={s.card}>
           <div style={s.cardHeader}>
             <div>
               <h2 style={s.cardTitle}>Dein Onboarding-Status</h2>
@@ -368,7 +369,7 @@ export default function Dashboard() {
 
         {/* Team Block */}
         {canManageTeam && (
-          <div style={s.card}>
+          <div className="gx-card gx-card--hover" style={s.card}>
             <div style={s.cardHeader}>
               <div>
                 <h2 style={s.cardTitle}>
@@ -376,7 +377,7 @@ export default function Dashboard() {
                 </h2>
                 <p style={s.cardSubtitle}>{team.length} Mitarbeiter</p>
               </div>
-              <button style={s.newTaskBtn} onClick={() => setShowNewTask(true)}>
+              <button className="gx-btn" style={s.newTaskBtn} onClick={() => setShowNewTask(true)}>
                 + Neue Aufgabe
               </button>
             </div>
@@ -387,7 +388,7 @@ export default function Dashboard() {
               const p   = member.progress_percent || 0;
               const col = p >= 75 ? '#34D399' : p >= 40 ? '#1E40AF' : '#F59E0B';
               return (
-                <div key={member.id} style={s.memberRow}>
+                <div key={member.id} className="gx-row" style={s.memberRow}>
                   <span style={{fontSize:'24px'}}>👤</span>
                   <div style={{flex:1}}>
                     <div style={{display:'flex', justifyContent:'space-between', marginBottom:'6px'}}>
@@ -406,15 +407,15 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div style={{display:'flex', gap:'6px'}}>
-                    <button style={s.viewBtn}
+                    <button className="gx-btn" style={s.viewBtn}
                       onClick={() => navigate(`/tasks?user_id=${member.id}&name=${member.username}`)}>
                       →
                     </button>
-                    <button style={s.resetPwBtn} onClick={() => setResetMember(member)} title="Passwort zurücksetzen">
+                    <button className="gx-btn" style={s.resetPwBtn} onClick={() => setResetMember(member)} title="Passwort zurücksetzen">
                       🔑
                     </button>
                     {role === 'Verwaltung' && (
-                      <button style={s.deleteBtn}
+                      <button className="gx-btn" style={s.deleteBtn}
                         onClick={() => handleDelete(member.id, member.username)} title="Löschen">
                         🗑️
                       </button>
@@ -427,7 +428,7 @@ export default function Dashboard() {
         )}
 
         {/* Tasks Card */}
-        <div style={s.card}>
+        <div className="gx-card gx-card--hover" style={s.card}>
           <div style={s.cardHeader}>
             <h2 style={s.cardTitle}>Deine Aufgaben</h2>
             <span style={s.badge}>{total - completed} verbleibend</span>
@@ -437,7 +438,7 @@ export default function Dashboard() {
           ) : tasks.length === 0 ? (
             <p style={{color:'#64748B', padding:'16px 0'}}>Keine Aufgaben vorhanden.</p>
           ) : tasks.slice(0, 5).map(task => (
-            <div key={task.id} style={{...s.taskRow, ...(task === next ? s.taskActive : {})}}>
+            <div key={task.id} className="gx-row" style={{...s.taskRow, ...(task === next ? s.taskActive : {})}}>
               <span style={task.is_completed ? s.checkDone : s.checkOpen}>
                 {task.is_completed ? '✓' : '○'}
               </span>
@@ -457,13 +458,13 @@ export default function Dashboard() {
               {!task.is_completed && task === next && (
                 <>
                   <span style={s.activeBadge}>in Bearbeitung</span>
-                  <button style={s.continueBtn} onClick={() => navigate('/tasks')}>Fortsetzen</button>
+                  <button className="gx-btn" style={s.continueBtn} onClick={() => navigate('/tasks')}>Fortsetzen</button>
                 </>
               )}
               {!task.is_completed && task !== next && (
                 <>
                   <span style={s.openBadge}>offen</span>
-                  <button style={s.startBtn} onClick={() => navigate('/tasks')}>Starten</button>
+                  <button className="gx-btn" style={s.startBtn} onClick={() => navigate('/tasks')}>Starten</button>
                 </>
               )}
             </div>
@@ -503,7 +504,7 @@ const s = {
   newUserBtn:     { background:'#1E293B', color:'#A78BFA', border:'1px solid #4C1D95', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   pwBtn:          { background:'#1E293B', color:'#94A3B8', border:'1px solid #334155', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' },
   logoutBtn:      { background:'#EF4444', color:'#fff', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
-  card:           { background:'#10192B', border:'1px solid #1E293B', borderRadius:'12px', padding:'24px', marginBottom:'24px' },
+  card:           { borderRadius:'18px', padding:'24px', marginBottom:'24px' },
   cardHeader:     { display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:'16px' },
   cardTitle:      { color:'#E2E8F0', fontSize:'18px', fontWeight:'700', margin:'0 0 4px' },
   cardSubtitle:   { color:'#64748B', fontSize:'13px', margin:0 },
@@ -529,8 +530,8 @@ const s = {
 };
 
 const m = {
-  overlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
-  modal:   { background:'#10192B', border:'1px solid #1E293B', borderRadius:'16px', padding:'32px', width:'100%', maxWidth:'440px', boxSizing:'border-box' },
+  overlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
+  modal:   { borderRadius:'18px', padding:'32px', width:'100%', maxWidth:'440px', boxSizing:'border-box' },
   header:  { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px' },
   close:   { background:'none', border:'none', color:'#64748B', fontSize:'20px', cursor:'pointer' },
   label:   { color:'#94A3B8', fontSize:'13px', fontWeight:'600', display:'block', marginBottom:'6px' },

@@ -2,27 +2,38 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 
-export default function Login() {
+export default function Signup() {
+  const [orgName,  setOrgName]  = useState('');
   const [username, setUsername] = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [showPw,   setShowPw]   = useState(false);
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
   const navigate                 = useNavigate();
 
-  const handleLogin = async () => {
-    if (!username || !password) { setError('Bitte alle Felder ausfüllen.'); return; }
+  const handleSignup = async () => {
+    if (!orgName || !username || !email || !password) {
+      setError('Bitte alle Felder ausfüllen.'); return;
+    }
+    if (password.length < 6) {
+      setError('Passwort muss mindestens 6 Zeichen haben.'); return;
+    }
     setLoading(true);
     setError('');
     try {
-      const res = await client.post('/api/auth/login', { username, password });
+      const res = await client.post('/api/auth/signup', {
+        organization_name: orgName,
+        username,
+        email,
+        password,
+      });
       localStorage.setItem('token',    res.data.access_token);
       localStorage.setItem('username', res.data.username);
       localStorage.setItem('role',     res.data.user_role);
       localStorage.setItem('user_id',  res.data.user_id);
       navigate('/dashboard');
-    } catch {
-      setError('Benutzername oder Passwort falsch.');
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Registrierung fehlgeschlagen.');
     } finally {
       setLoading(false);
     }
@@ -36,69 +47,79 @@ export default function Login() {
           <span style={s.logoIcon}>➜]</span>
           <span style={s.logoText}>OnboardGuide AI</span>
         </div>
-        <p style={s.tagline}>Your intelligent onboarding companion</p>
+        <p style={s.tagline}>Registriere deine Firma und leg direkt los</p>
 
-        {/* Username */}
-        <label style={s.label}>Email or Username</label>
+        <label style={s.label}>Firmenname</label>
+        <div style={s.inputWrap}>
+          <span style={s.inputIcon}>🏢</span>
+          <input
+            className="gx-input"
+            style={s.input}
+            placeholder="z.B. Acme GmbH"
+            value={orgName}
+            onChange={e => setOrgName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSignup()}
+          />
+        </div>
+
+        <label style={s.label}>Dein Benutzername</label>
         <div style={s.inputWrap}>
           <span style={s.inputIcon}>👤</span>
           <input
             className="gx-input"
             style={s.input}
-            placeholder="e.g. lisa_schmidt"
+            placeholder="z.B. max_mueller"
             value={username}
             onChange={e => setUsername(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            onKeyDown={e => e.key === 'Enter' && handleSignup()}
           />
         </div>
 
-        {/* Password */}
-        <label style={s.label}>Password</label>
+        <label style={s.label}>E-Mail</label>
+        <div style={s.inputWrap}>
+          <span style={s.inputIcon}>✉️</span>
+          <input
+            className="gx-input"
+            style={s.input}
+            type="email"
+            placeholder="max@firma.de"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSignup()}
+          />
+        </div>
+
+        <label style={s.label}>Passwort</label>
         <div style={s.inputWrap}>
           <span style={s.inputIcon}>🔒</span>
           <input
             className="gx-input"
             style={s.input}
-            type={showPw ? 'text' : 'password'}
-            placeholder="••••••••••••"
+            type="password"
+            placeholder="Mindestens 6 Zeichen"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            onKeyDown={e => e.key === 'Enter' && handleSignup()}
           />
-          <span
-            style={s.eyeIcon}
-            onClick={() => setShowPw(!showPw)}
-          >
-            {showPw ? '🙈' : '👁️'}
-          </span>
         </div>
 
-        {/* Remember + Forgot */}
-        <div style={s.row}>
-          <label style={s.checkRow}>
-            <input type="checkbox" style={{marginRight:'6px'}} />
-            <span style={{color:'#64748B', fontSize:'13px'}}>Remember me</span>
-          </label>
-          <span style={s.forgotLink}>Passwort vergessen? Kontaktiere HR.</span>
-        </div>
+        <p style={s.note}>
+          Du wirst automatisch erster Verwaltung-Account deiner neuen Firma.
+        </p>
 
-        {/* Error */}
         {error && <p style={s.error}>{error}</p>}
 
-        {/* Button */}
         <button
           className="gx-btn"
           style={{...s.button, opacity: loading ? 0.7 : 1}}
-          onClick={handleLogin}
+          onClick={handleSignup}
           disabled={loading}
         >
-          {loading ? 'Wird eingeloggt...' : 'Log In'}
+          {loading ? 'Wird erstellt...' : 'Firma registrieren'}
         </button>
 
-        {/* Hint */}
-        <p style={s.hint}>Zugang anfragen? Wende dich an die HR-Abteilung.</p>
         <p style={s.hint}>
-          Neue Firma? <span style={s.signupLink} onClick={() => navigate('/signup')}>Jetzt registrieren</span>
+          Schon registriert? <span style={s.loginLink} onClick={() => navigate('/login')}>Zum Login</span>
         </p>
       </div>
     </div>
@@ -106,7 +127,7 @@ export default function Login() {
 }
 
 const s = {
-  page:      { minHeight:'100vh', background:'#0A0E18', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Segoe UI, sans-serif' },
+  page:      { minHeight:'100vh', background:'#0A0E18', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Segoe UI, sans-serif', padding:'24px 0' },
   card:      { background:'transparent', borderRadius:'20px', padding:'48px', width:'420px', boxSizing:'border-box' },
   logoRow:   { display:'flex', alignItems:'center', gap:'12px', marginBottom:'6px' },
   logoIcon:  { fontSize:'32px' },
@@ -116,12 +137,9 @@ const s = {
   inputWrap: { position:'relative', display:'flex', alignItems:'center', marginBottom:'20px' },
   inputIcon: { position:'absolute', left:'14px', fontSize:'16px', zIndex:1 },
   input:     { width:'100%', padding:'13px 42px', background:'#0A0E18', border:'1px solid #1E40AF', borderRadius:'10px', color:'#E2E8F0', fontSize:'14px', outline:'none', boxSizing:'border-box' },
-  eyeIcon:   { position:'absolute', right:'14px', cursor:'pointer', fontSize:'16px' },
-  row:       { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px' },
-  checkRow:  { display:'flex', alignItems:'center', cursor:'pointer' },
-  forgotLink:{ color:'#3B82F6', fontSize:'13px', cursor:'pointer' },
+  note:      { color:'#475569', fontSize:'12px', marginTop:'-8px', marginBottom:'20px' },
   error:     { color:'#EF4444', fontSize:'13px', marginBottom:'12px', textAlign:'center' },
   button:    { width:'100%', padding:'14px', background:'#3B82F6', color:'#fff', border:'none', borderRadius:'10px', fontSize:'16px', fontWeight:'600', cursor:'pointer', marginBottom:'20px' },
-  hint:      { color:'#475569', fontSize:'12px', textAlign:'center', margin:'8px 0 0' },
-  signupLink:{ color:'#3B82F6', cursor:'pointer', fontWeight:'600' },
+  hint:      { color:'#475569', fontSize:'12px', textAlign:'center', margin:0 },
+  loginLink: { color:'#3B82F6', cursor:'pointer', fontWeight:'600' },
 };
