@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 
 from app.database import get_db
-from app.routers import auth, users, tasks, documents, chat, ws, leave
+from app.routers import auth, users, tasks, documents, chat, ws, leave, platform
 from app.services.ws_manager import manager
 
 # Schema wird über Alembic-Migrationen verwaltet (siehe alembic/ + README).
@@ -46,6 +46,7 @@ app.include_router(tasks.router)
 app.include_router(documents.router)
 app.include_router(chat.router)
 app.include_router(leave.router)
+app.include_router(platform.router)
 app.include_router(ws.router)
 
 

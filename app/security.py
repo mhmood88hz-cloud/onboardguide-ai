@@ -78,6 +78,20 @@ def get_current_user(
     return int(payload["sub"])
 
 
+def organization_has_access(org) -> bool:
+    """
+    Kein Stripe: Firmen werden manuell nach Absprache (Rechnung/Lastschrift
+    außerhalb der App) freigeschaltet, siehe app/routers/platform.py.
+    active_until=None bedeutet unbefristet – ist es gesetzt, läuft der
+    Zugriff automatisch aus, ohne dass etwas zurückgesetzt werden muss.
+    """
+    if not org.is_active:
+        return False
+    if org.active_until is not None and org.active_until < datetime.utcnow():
+        return False
+    return True
+
+
 def load_current_user(user_id: int, db: Session):
     """Loads the User object from DB using existing session."""
     from app.models import User
@@ -86,6 +100,11 @@ def load_current_user(user_id: int, db: Session):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Benutzer nicht gefunden."
+        )
+    if not organization_has_access(user.organization):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="Zugang dieser Firma ist derzeit nicht freigeschaltet. Bitte HR/Vertrieb kontaktieren."
         )
     return user
 

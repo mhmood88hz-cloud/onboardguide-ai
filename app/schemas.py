@@ -23,6 +23,24 @@ class SignupRequest(BaseModel):
     password:          str = Field(..., min_length=6)
 
 
+class OrganizationAdminResponse(BaseModel):
+    """Für /api/platform/organizations – nur mit ADMIN_TOKEN erreichbar."""
+    id:           int
+    name:         str
+    slug:         str
+    plan:         str
+    is_active:    bool
+    active_until: Optional[datetime] = None
+    created_at:   datetime
+    class Config:
+        from_attributes = True
+
+
+class ActivateOrganizationRequest(BaseModel):
+    plan:         Optional[str]      = Field(None, description="z.B. 'active' – Standardwert, wenn leer")
+    active_until: Optional[datetime] = Field(None, description="None = unbefristet freigeschaltet")
+
+
 # ── User ──────────────────────────────────────────────────────────────────
 class UserBase(BaseModel):
     username:         str = Field(..., min_length=3, max_length=100)

@@ -15,8 +15,13 @@ class Organization(Base):
     name       = Column(String(150), nullable=False)
     slug       = Column(String(150), unique=True, nullable=False, index=True)
     plan       = Column(String(20), nullable=False, server_default=text("'trial'"))
-    # 'trial' | 'active' | 'canceled' – von Stripe-Webhooks aktualisiert, sobald Billing angebunden ist
-    is_active  = Column(Boolean, nullable=False, server_default=text("true"))
+    # 'trial' | 'active' | 'canceled' – kein Stripe: Freischaltung erfolgt manuell nach
+    # Absprache (Rechnung/Lastschrift außerhalb der App), siehe app/routers/platform.py
+    is_active    = Column(Boolean, nullable=False, server_default=text("true"))
+    active_until = Column(DateTime, nullable=True)
+    # NULL + is_active=True → unbefristet freigeschaltet (z.B. Trial).
+    # Gesetzt → Zugriff läuft automatisch aus, sobald das Datum überschritten ist,
+    # ohne dass etwas zurückgesetzt werden muss (siehe security.organization_has_access).
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     users     = relationship("User", back_populates="organization")
