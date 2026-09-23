@@ -15,42 +15,46 @@ import pytest
 
 class TestCreateTask:
 
-    def test_create_task_success(self, client, test_users):
+    def test_create_task_success(self, client, test_users, auth_headers):
         """Task erstellen gibt 201 zurück."""
         response = client.post("/api/tasks", json={
             "title": "Neuer Test Task",
             "description": "Test Beschreibung",
             "task_type": "Onboarding",
             "assigned_to": test_users["mitarbeiter"].id
-        })
+        }, headers=auth_headers["verwaltung"])
         assert response.status_code == 201
         data = response.json()
         assert data["title"] == "Neuer Test Task"
         assert data["is_completed"] == False
 
-    def test_create_task_invalid_user(self, client):
+    def test_create_task_invalid_user(self, client, auth_headers):
         """Task für nicht-existierenden User → 404."""
         response = client.post("/api/tasks", json={
             "title": "Task für niemanden",
             "task_type": "Onboarding",
             "assigned_to": 99999
-        })
+        }, headers=auth_headers["verwaltung"])
         assert response.status_code == 404
 
 
 class TestGetTasks:
 
-    def test_get_tasks_success(self, client, test_users):
+    def test_get_tasks_success(self, client, test_users, auth_headers):
         """Tasks eines Users abrufen → 200."""
         response = client.get(
-            f"/api/tasks?user_id={test_users['mitarbeiter'].id}"
+            f"/api/tasks?user_id={test_users['mitarbeiter'].id}",
+            headers=auth_headers["verwaltung"]
         )
         assert response.status_code == 200
         assert isinstance(response.json(), list)
 
-    def test_get_tasks_unknown_user(self, client):
+    def test_get_tasks_unknown_user(self, client, auth_headers):
         """Tasks für unbekannten User → 404."""
-        response = client.get("/api/tasks?user_id=99999")
+        response = client.get(
+            "/api/tasks?user_id=99999",
+            headers=auth_headers["verwaltung"]
+        )
         assert response.status_code == 404
 
 
@@ -87,14 +91,15 @@ class TestCompleteTask:
         assert response.status_code in [200, 403]
 
     def test_complete_task_as_verwaltung(self, client, test_users,
-                                          auth_headers, db_session):
+                                          auth_headers, db_session, test_org):
         """Verwaltung darf jeden Task abschließen."""
         from app.models import Task
         task = Task(
             title="Verwaltung Test Task",
             task_type="Onboarding",
             assigned_to=test_users["mitarbeiter"].id,
-            is_completed=False
+            is_completed=False,
+            organization_id=test_org.id
         )
         db_session.add(task)
         db_session.commit()

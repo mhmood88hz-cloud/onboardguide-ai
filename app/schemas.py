@@ -1,6 +1,26 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Literal
 from pydantic import BaseModel, Field, EmailStr
+
+
+# ── Organization (Mandant / Firma) ───────────────────────────────────────
+class OrganizationResponse(BaseModel):
+    id:         int
+    name:       str
+    slug:       str
+    plan:       str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
+class SignupRequest(BaseModel):
+    """Self-Serve-Registrierung: legt eine neue Organization an und macht
+    den anfragenden Nutzer zu deren erstem Verwaltung-Account."""
+    organization_name: str = Field(..., min_length=2, max_length=150)
+    username:          str = Field(..., min_length=3, max_length=100)
+    email:              EmailStr
+    password:          str = Field(..., min_length=6)
 
 
 # ── User ──────────────────────────────────────────────────────────────────
@@ -17,6 +37,9 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id:               int
+    organization_id:  int
+    email:            str  # plain str on read: re-validating already-stored emails as EmailStr
+                            # means one bad row (legacy data, reserved TLD, ...) 500s the whole list
     progress_percent: int
     created_at:       datetime
     class Config:
@@ -90,6 +113,7 @@ class ChatResponse(BaseModel):
     used_documents: List[str]
     chunk_stats:    List[dict] = []
     model_comparison: List[dict] = []
+    images:         List[dict] = []
     model_config = {"protected_namespaces": ()}  # ← NEU
 class TaskExplanationLLMResponse(BaseModel):
     summary:        str       = Field(..., description="Short summary of the task")
@@ -101,17 +125,60 @@ class TaskExplainEndpointResponse(BaseModel):
     task_title:  str
     explanation: TaskExplanationLLMResponse
 
+# ── Leave (Krankmeldung / Urlaub) ────────────────────────────────────────
+class LeaveRequestCreate(BaseModel):
+    start_date: date
+    end_date:   date
+    reason:     Optional[str] = None
+
+class LeaveRequestResponse(BaseModel):
+    id:                   int
+    user_id:              int
+    username:             str
+    leave_type:           Literal["Krankmeldung", "Urlaub"]
+    start_date:           date
+    end_date:             date
+    reason:               Optional[str] = None
+    status:               Literal["Ausstehend", "Genehmigt", "Abgelehnt"]
+    substitute_user_id:   Optional[int] = None
+    substitute_username:  Optional[str] = None
+    decided_by:           Optional[int] = None
+    decided_at:           Optional[datetime] = None
+    created_at:           datetime
+
+class LeaveStatusResponse(BaseModel):
+    user_id:              int
+    username:             str
+    date:                 date
+    on_leave:             bool
+    leave_type:           Optional[str] = None
+    status:                Optional[str] = None
+    substitute_user_id:   Optional[int] = None
+    substitute_username:  Optional[str] = None
+
+class TeamPresenceMember(BaseModel):
+    user_id:              int
+    username:             str
+    department:           Optional[str] = None
+    on_leave:             bool
+    leave_type:           Optional[str] = None
+    substitute_user_id:   Optional[int] = None
+    substitute_username:  Optional[str] = None
+
+
 # ── JWT Auth ──────────────────────────────────────────────────────────────
 class LoginRequest(BaseModel):
     username: str = Field(..., min_length=3)
     password: str = Field(..., min_length=6)
 
 class TokenResponse(BaseModel):
-    access_token: str
-    token_type:   str = "bearer"
-    user_id:      int
-    username:     str
-    user_role:    str
+    access_token:      str
+    token_type:        str = "bearer"
+    user_id:           int
+    username:          str
+    user_role:         str
+    organization_id:   int
+    organization_name: str
 
 class ChangePasswordRequest(BaseModel):
     old_password: str = Field(..., min_length=6)

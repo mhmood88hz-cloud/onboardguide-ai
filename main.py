@@ -6,11 +6,12 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from pathlib import Path
 
-from app.database import Base, engine, get_db
-from app.routers import auth, users, tasks, documents, chat, ws
+from app.database import get_db
+from app.routers import auth, users, tasks, documents, chat, ws, leave
 from app.services.ws_manager import manager
 
-Base.metadata.create_all(bind=engine)
+# Schema wird über Alembic-Migrationen verwaltet (siehe alembic/ + README).
+# `alembic upgrade head` vor dem Start ausführen statt Base.metadata.create_all().
 
 
 @asynccontextmanager
@@ -44,6 +45,7 @@ app.include_router(users.router)
 app.include_router(tasks.router)
 app.include_router(documents.router)
 app.include_router(chat.router)
+app.include_router(leave.router)
 app.include_router(ws.router)
 
 

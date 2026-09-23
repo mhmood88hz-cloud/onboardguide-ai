@@ -75,10 +75,10 @@ async def ask_onboarding_guide(
 
     try:
         if request.compare_models:
-            ai_reply, context_titles, chunk_stats, model_comparison = \
+            ai_reply, context_titles, chunk_stats, model_comparison, images = \
                 run_model_comparison(current_user, request.question, db)
         else:
-            ai_reply, context_titles, chunk_stats = run_rag_chat(
+            ai_reply, context_titles, chunk_stats, images = run_rag_chat(
                 current_user, request.question, db
             )
             model_comparison = []
@@ -98,6 +98,7 @@ async def ask_onboarding_guide(
              f"Antwort basiert auf {len(chunk_stats)} Chunks. Scores: {chunk_info or 'keine'}")
 
     db.add(ChatMessage(
+        organization_id=current_user.organization_id,
         user_id=current_user.id,
         user_question=request.question,
         ai_response=ai_reply
@@ -130,7 +131,8 @@ async def ask_onboarding_guide(
         ai_response=ai_reply,
         used_documents=context_titles,
         chunk_stats=chunk_stats,
-        model_comparison=model_comparison
+        model_comparison=model_comparison,
+        images=images
     )
 
 
@@ -154,7 +156,10 @@ async def explain_task_personalized(
              "load_current_user() lädt Benutzer mit bestehender Session.")
 
     current_user = load_current_user(user_id, db)
-    db_task      = db.query(Task).filter(Task.id == task_id).first()
+    db_task      = db.query(Task).filter(
+        Task.id == task_id,
+        Task.organization_id == current_user.organization_id
+    ).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Aufgabe nicht gefunden!")
 

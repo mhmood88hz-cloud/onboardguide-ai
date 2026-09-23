@@ -27,11 +27,20 @@ def update_user_progress(db: Session, user_id: int):
 
 
 @router.post("", response_model=TaskResponse, status_code=201)
-def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+def create_task(
+    task:            TaskCreate,
+    db:              Session = Depends(get_db),
+    requester_id:    int     = Depends(get_current_user)
+):
     """Erstellt eine neue Aufgabe und berechnet Fortschritt neu."""
-    if not db.query(User).filter(User.id == task.assigned_to).first():
+    requester = load_current_user(requester_id, db)
+    assignee = db.query(User).filter(
+        User.id == task.assigned_to,
+        User.organization_id == requester.organization_id
+    ).first()
+    if not assignee:
         raise HTTPException(status_code=404, detail="Zugewiesener Benutzer nicht gefunden!")
-    new_task = Task(**task.model_dump())
+    new_task = Task(organization_id=requester.organization_id, **task.model_dump())
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
@@ -41,8 +50,17 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 
 
 @router.get("", response_model=List[TaskResponse])
-def get_user_tasks(user_id: int, db: Session = Depends(get_db)):
-    if not db.query(User).filter(User.id == user_id).first():
+def get_user_tasks(
+    user_id:      int,
+    db:           Session = Depends(get_db),
+    requester_id: int     = Depends(get_current_user)
+):
+    requester = load_current_user(requester_id, db)
+    target = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == requester.organization_id
+    ).first()
+    if not target:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden!")
     return db.query(Task).filter(Task.assigned_to == user_id).all()
 
@@ -72,7 +90,10 @@ async def complete_task(
              "Aufgabe aus DB laden",
              f"db.query(Task).filter(Task.id == {task_id}).first()")
 
-    db_task = db.query(Task).filter(Task.id == task_id).first()
+    db_task = db.query(Task).filter(
+        Task.id == task_id,
+        Task.organization_id == current_user.organization_id
+    ).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Aufgabe nicht gefunden!")
 
@@ -136,10 +157,19 @@ async def complete_task(
 
 
 @router.get("/leader/progress", response_model=List[TeamMemberProgress])
-def get_leader_team_progress(leader_id: int, db: Session = Depends(get_db)):
+def get_leader_team_progress(
+    leader_id:    int,
+    db:           Session = Depends(get_db),
+    requester_id: int     = Depends(get_current_user)
+):
+    requester = load_current_user(requester_id, db)
     leader = db.query(User).filter(
-        User.id == leader_id, User.user_role == "Leader"
+        User.id == leader_id, User.user_role == "Leader",
+        User.organization_id == requester.organization_id
     ).first()
     if not leader:
         raise HTTPException(status_code=404, detail="Team-Leader nicht gefunden!")
-    return db.query(User).filter(User.reports_to == leader_id).all()
+    return db.query(User).filter(
+        User.reports_to == leader_id,
+        User.organization_id == requester.organization_id
+    ).all()

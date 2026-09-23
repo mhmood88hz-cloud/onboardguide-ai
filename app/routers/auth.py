@@ -1,14 +1,23 @@
 import json
+import re
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User
-from app.schemas import UserCreate, UserResponse, LoginRequest, TokenResponse, ChangePasswordRequest, ResetPasswordRequest
+from app.models import User, Organization
+from app.schemas import (
+    UserCreate, UserResponse, LoginRequest, TokenResponse,
+    ChangePasswordRequest, ResetPasswordRequest, SignupRequest,
+)
 from app.security import require_verwaltung, hash_password, verify_password, create_access_token, get_current_user, load_current_user
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
+
+
+def _slugify(name: str) -> str:
+    base = re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-") or "firma"
+    return base
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -35,7 +44,59 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         token_type="bearer",
         user_id=user.id,
         username=user.username,
-        user_role=user.user_role
+        user_role=user.user_role,
+        organization_id=user.organization_id,
+        organization_name=user.organization.name
+    )
+
+
+@router.post("/signup", response_model=TokenResponse, status_code=201)
+def signup(request: SignupRequest, db: Session = Depends(get_db)):
+    """
+    Self-Serve-Registrierung für eine neue Firma: legt die Organization an
+    und macht den anfragenden Nutzer zu deren erstem Verwaltung-Account.
+    Kein Login/Token nötig – das ist der Einstiegspunkt für neue Kunden.
+    """
+    if db.query(User).filter(User.username == request.username).first():
+        raise HTTPException(status_code=400, detail="Benutzername bereits vergeben!")
+    if db.query(User).filter(User.email == request.email).first():
+        raise HTTPException(status_code=400, detail="E-Mail bereits registriert!")
+
+    slug = base_slug = _slugify(request.organization_name)
+    suffix = 2
+    while db.query(Organization).filter(Organization.slug == slug).first():
+        slug = f"{base_slug}-{suffix}"
+        suffix += 1
+
+    org = Organization(name=request.organization_name, slug=slug)
+    db.add(org)
+    db.flush()  # org.id verfügbar, ohne die Transaktion schon zu committen
+
+    admin_user = User(
+        organization_id=org.id,
+        username=request.username,
+        email=request.email,
+        password_hash=hash_password(request.password),
+        user_role="Verwaltung",
+    )
+    db.add(admin_user)
+    db.commit()
+    db.refresh(admin_user)
+
+    token = create_access_token(
+        user_id=admin_user.id,
+        username=admin_user.username,
+        role=admin_user.user_role
+    )
+
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user_id=admin_user.id,
+        username=admin_user.username,
+        user_role=admin_user.user_role,
+        organization_id=org.id,
+        organization_name=org.name
     )
 @router.post("/change-password", status_code=200)
 def change_password(
@@ -64,17 +125,20 @@ def change_password(
     }
 
 
-@router.post("/reset-password", status_code=200,
-             dependencies=[Depends(require_verwaltung)])
+@router.post("/reset-password", status_code=200)
 def reset_password(
-    request: ResetPasswordRequest,
-    db:      Session = Depends(get_db)
+    request:      ResetPasswordRequest,
+    db:           Session = Depends(get_db),
+    current_user: User    = Depends(require_verwaltung)
 ):
     """
     Verwaltung setzt Passwort eines Mitarbeiters zurück.
-    Benötigt: JWT Token mit Verwaltung-Rolle.
+    Benötigt: JWT Token mit Verwaltung-Rolle, Ziel-Nutzer muss zur selben Firma gehören.
     """
-    user = db.query(User).filter(User.id == request.user_id).first()
+    user = db.query(User).filter(
+        User.id == request.user_id,
+        User.organization_id == current_user.organization_id
+    ).first()
     if not user:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden!")
 
@@ -86,12 +150,12 @@ def reset_password(
         "message": f"Passwort von '{user.username}' wurde zurückgesetzt."
     }
 
-@router.post("/register", response_model=UserResponse, status_code=201,
-             dependencies=[Depends(require_verwaltung)])
+@router.post("/register", response_model=UserResponse, status_code=201)
 async def register_user(
-    user:     UserCreate,
-    response: Response,
-    db:       Session = Depends(get_db)
+    user:         UserCreate,
+    response:     Response,
+    db:           Session = Depends(get_db),
+    current_user: User    = Depends(require_verwaltung)
 ):
     start_trace()
     log_step("User", "Main",
@@ -120,11 +184,20 @@ async def register_user(
              "Duplikat-Prüfung E-Mail",
              f"E-Mail '{user.email}' → nicht gefunden. OK.")
 
+    if user.reports_to is not None:
+        manager_user = db.query(User).filter(
+            User.id == user.reports_to,
+            User.organization_id == current_user.organization_id
+        ).first()
+        if not manager_user:
+            raise HTTPException(status_code=404, detail="reports_to: Benutzer nicht in dieser Firma gefunden!")
+
     log_step("Router", "Security",
              "Passwort hashen",
              "bcrypt mit zufälligem Salt → 60-Zeichen Hash.")
 
     new_user = User(
+        organization_id=current_user.organization_id,
         username=user.username,
         email=user.email,
         password_hash=hash_password(user.password),

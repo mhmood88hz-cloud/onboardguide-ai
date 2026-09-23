@@ -1,3 +1,4 @@
+import re
 import time
 from typing import List, Dict
 from openai import OpenAI
@@ -9,6 +10,11 @@ client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Embedding model – small is fast and cheap, 1536 dimensions
 EMBEDDING_MODEL = "text-embedding-3-small"
+
+# Marker, den documents.py beim PDF-Textextrahieren vor jede Seite einfügt
+# (z.B. "<<<PAGE:3>>>"), damit Chunks später wissen, von welcher Seite sie
+# stammen – nötig um passende Screenshots/Bilder im Chat zeigen zu können.
+PAGE_MARKER_RE = re.compile(r"<<<PAGE:(\d+)>>>")
 
 
 def chunk_text(text: str, chunk_size: int = CHUNK_SIZE,
@@ -28,6 +34,48 @@ def chunk_text(text: str, chunk_size: int = CHUNK_SIZE,
         if chunk.strip():
             chunks.append(chunk)
         # move forward by (chunk_size - overlap) to create overlap
+        start += chunk_size - overlap
+
+    return chunks
+
+
+def _words_with_pages(text: str) -> tuple[List[str], List[int]]:
+    """
+    Strips "<<<PAGE:n>>>" markers out of the text and returns the remaining
+    words together with a parallel list of which PDF page each word came from.
+    Text without markers (e.g. .txt uploads) is treated as all page 1.
+    """
+    words, pages = [], []
+    current_page = 1
+    for tok in text.split():
+        m = PAGE_MARKER_RE.fullmatch(tok)
+        if m:
+            current_page = int(m.group(1))
+        else:
+            words.append(tok)
+            pages.append(current_page)
+    return words, pages
+
+
+def chunk_text_with_pages(text: str, chunk_size: int = CHUNK_SIZE,
+                          overlap: int = CHUNK_OVERLAP) -> List[Dict]:
+    """
+    Same sliding-window chunking as chunk_text(), but also records which
+    page(s) of the source PDF each chunk's words came from. Used so the chat
+    can show the screenshot(s) from the page(s) a chunk was retrieved from.
+    """
+    words, word_pages = _words_with_pages(text)
+    chunks = []
+    start  = 0
+
+    while start < len(words):
+        end   = start + chunk_size
+        chunk = " ".join(words[start:end])
+        if chunk.strip():
+            chunks.append({
+                "content": chunk,
+                "pages":   sorted(set(word_pages[start:end])),
+            })
         start += chunk_size - overlap
 
     return chunks
@@ -57,8 +105,8 @@ def embed_document(document_id: int, text: str, db: Session) -> Dict:
     if not client:
         return {"chunks_created": 0, "error": "OpenAI client not configured"}
 
-    # Step 1: Split into chunks
-    chunks = chunk_text(text)
+    # Step 1: Split into chunks (page-aware, so images can be matched later)
+    chunks = chunk_text_with_pages(text)
     if not chunks:
         return {"chunks_created": 0, "error": "No text to embed"}
 
@@ -66,8 +114,9 @@ def embed_document(document_id: int, text: str, db: Session) -> Dict:
     saved   = 0
     t_start = time.time()
 
-    for i, chunk_content in enumerate(chunks):
-        embedding = create_embedding(chunk_content)
+    for i, chunk in enumerate(chunks):
+        chunk_content = chunk["content"]
+        embedding     = create_embedding(chunk_content)
 
         db_chunk = DocumentChunk(
             document_id    = document_id,
@@ -79,6 +128,7 @@ def embed_document(document_id: int, text: str, db: Session) -> Dict:
                 "chunk_index":  i,
                 "total_chunks": len(chunks),
                 "word_count":   len(chunk_content.split()),
+                "pages":        chunk["pages"],
             }
         )
         db.add(db_chunk)
@@ -123,7 +173,8 @@ def search_similar_chunks(query: str, db: Session,
                 dc.chunk_index,
                 dc.content,
                 dc.token_count,
-                1 - (dc.embedding <=> CAST(:embedding AS vector)) AS similarity_score
+                1 - (dc.embedding <=> CAST(:embedding AS vector)) AS similarity_score,
+                dc.chunk_metadata
             FROM document_chunks dc
             WHERE dc.document_id = ANY(:doc_ids)
             ORDER BY dc.embedding <=> CAST(:embedding AS vector)
@@ -142,7 +193,8 @@ def search_similar_chunks(query: str, db: Session,
                 dc.chunk_index,
                 dc.content,
                 dc.token_count,
-                1 - (dc.embedding <=> CAST(:embedding AS vector)) AS similarity_score
+                1 - (dc.embedding <=> CAST(:embedding AS vector)) AS similarity_score,
+                dc.chunk_metadata
             FROM document_chunks dc
             ORDER BY dc.embedding <=> CAST(:embedding AS vector)
             LIMIT :top_k
@@ -160,6 +212,7 @@ def search_similar_chunks(query: str, db: Session,
             "content":         row[3],
             "token_count":     row[4],
             "similarity_score": round(float(row[5]), 4),
+            "pages":           (row[6] or {}).get("pages", []),
         }
         for row in rows
     ]

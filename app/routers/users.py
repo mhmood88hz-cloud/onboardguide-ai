@@ -12,19 +12,21 @@ from app.services.ws_manager import manager
 router = APIRouter(prefix="/api/users", tags=["Users"])  # ← muss zuerst kommen
 
 
-@router.get("", response_model=List[UserResponse],
-            dependencies=[Depends(require_verwaltung)])
-def get_all_users(db: Session = Depends(get_db)):
-    """Verwaltung sieht alle Benutzer."""
-    return db.query(User).all()
+@router.get("", response_model=List[UserResponse])
+def get_all_users(
+    db:           Session = Depends(get_db),
+    current_user: User    = Depends(require_verwaltung)
+):
+    """Verwaltung sieht alle Benutzer der eigenen Firma."""
+    return db.query(User).filter(User.organization_id == current_user.organization_id).all()
 
 
-@router.delete("/{user_id}", status_code=200,
-               dependencies=[Depends(require_verwaltung)])
+@router.delete("/{user_id}", status_code=200)
 async def delete_user(
-    user_id:  int,
-    response: Response,
-    db:       Session = Depends(get_db)
+    user_id:      int,
+    response:     Response,
+    db:           Session = Depends(get_db),
+    current_user: User    = Depends(require_verwaltung)
 ):
     start_trace()
     log_step("User", "Main",
@@ -37,7 +39,10 @@ async def delete_user(
              "Weiterleitung zu users.py",
              "Token gültig – delete_user() übernimmt.")
 
-    db_user = db.query(User).filter(User.id == user_id).first()
+    db_user = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == current_user.organization_id
+    ).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden!")
 

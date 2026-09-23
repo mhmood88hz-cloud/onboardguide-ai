@@ -199,9 +199,27 @@ cp .env.example .env
 # Enable pgvector in PostgreSQL
 # In pgAdmin: CREATE EXTENSION IF NOT EXISTS vector;
 
+# Apply database migrations (creates schema incl. multi-tenant tables)
+alembic upgrade head
+
 # Start server
 uvicorn main:app --reload
 ```
+
+### Docker (all services)
+
+```bash
+cp .env.example .env   # fill in OPENAI_API_KEY, JWT_SECRET_KEY, ADMIN_TOKEN
+docker compose up --build
+```
+
+| URL | Description |
+|---|---|
+| `http://localhost:3000` | React Frontend (nginx) |
+| `http://localhost:8000` | FastAPI Backend |
+| `localhost:5432` | Postgres + pgvector |
+
+The backend container runs `alembic upgrade head` automatically before starting.
 
 ### Frontend
 
@@ -247,6 +265,7 @@ TOP_K_CHUNKS=3
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
+| `POST` | `/api/auth/signup` | – | Self-serve: creates a new Organization + its first Verwaltung user → JWT Token |
 | `POST` | `/api/auth/login` | – | Login → JWT Token |
 | `POST` | `/api/auth/register` | JWT + Verwaltung | Register new employee |
 | `POST` | `/api/auth/change-password` | JWT | Change own password |
@@ -379,13 +398,17 @@ Planned: is_sensitive flag on documents table
 - [x] Verwaltung dashboard — all users, delete, reset passwords
 - [x] pytest — 37 automated tests, all passing
 
+- [x] Multi-tenant data model (`Organization` + `organization_id` on every tenant-scoped table, self-serve `/api/auth/signup`)
+- [x] Alembic database migrations
+- [x] Docker containerization (backend, frontend, pgvector Postgres via `docker-compose.yml`)
+
 ### 🔜 Planned
 
-- [ ] Docker containerization
-- [ ] Alembic database migrations
+- [ ] Signup/onboarding page in the React frontend for `/api/auth/signup`
+- [ ] Stripe billing (subscription plans, webhook → `Organization.plan`)
 - [ ] Local model support (ollama + sentence-transformers) for sensitive documents
 - [ ] Azure OpenAI private deployment for GDPR compliance
-- [ ] Production deployment (Railway / Render + Neon.tech)
+- [ ] Production deployment (Railway / Render + Neon.tech), DNS under `onboardguide.leadspeak.de`
 
 ---
 

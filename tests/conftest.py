@@ -21,7 +21,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from app.database import Base, get_db
 from app.security import hash_password, create_access_token
-from app.models import User, Task
+from app.models import User, Task, Organization
 from main import app
 
 # ── Test DB ───────────────────────────────────────────────────────────────
@@ -79,16 +79,28 @@ def db_session():
 
 
 @pytest.fixture(scope="session")
-def test_users(db_session):
+def test_org(db_session):
+    org = Organization(name="Test GmbH", slug="test-gmbh")
+    db_session.add(org)
+    db_session.commit()
+    db_session.refresh(org)
+    return org
+
+
+@pytest.fixture(scope="session")
+def test_users(db_session, test_org):
     verwaltung = User(username="test_sarah", email="sarah@test.de",
                       password_hash=hash_password("password123"),
-                      user_role="Verwaltung", department="HR")
+                      user_role="Verwaltung", department="HR",
+                      organization_id=test_org.id)
     leader = User(username="test_max", email="max@test.de",
                   password_hash=hash_password("password123"),
-                  user_role="Leader", department="IT")
+                  user_role="Leader", department="IT",
+                  organization_id=test_org.id)
     mitarbeiter = User(username="test_lisa", email="lisa@test.de",
                        password_hash=hash_password("password123"),
-                       user_role="Mitarbeiter", department="IT")
+                       user_role="Mitarbeiter", department="IT",
+                       organization_id=test_org.id)
     db_session.add_all([verwaltung, leader, mitarbeiter])
     db_session.commit()
     for u in [verwaltung, leader, mitarbeiter]:
@@ -123,12 +135,13 @@ def auth_headers(tokens):
 
 
 @pytest.fixture(scope="session")
-def test_task(db_session, test_users):
+def test_task(db_session, test_users, test_org):
     task = Task(title="Test Task pytest", description="Test",
                 task_type="Onboarding",
                 assigned_to=test_users["mitarbeiter"].id,
                 assigned_by=test_users["verwaltung"].id,
-                is_completed=False)
+                is_completed=False,
+                organization_id=test_org.id)
     db_session.add(task)
     db_session.commit()
     db_session.refresh(task)

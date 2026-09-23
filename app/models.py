@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, Date, ForeignKey
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -6,10 +6,28 @@ from pgvector.sqlalchemy import Vector
 from app.database import Base
 
 
+class Organization(Base):
+    """Ein zahlender Kunde (Firma). Jede Firma ist ein eigener Mandant –
+    alle Nutzer, Dokumente, Aufgaben etc. gehören genau einer Organization."""
+    __tablename__ = "organizations"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    name       = Column(String(150), nullable=False)
+    slug       = Column(String(150), unique=True, nullable=False, index=True)
+    plan       = Column(String(20), nullable=False, server_default=text("'trial'"))
+    # 'trial' | 'active' | 'canceled' – von Stripe-Webhooks aktualisiert, sobald Billing angebunden ist
+    is_active  = Column(Boolean, nullable=False, server_default=text("true"))
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    users     = relationship("User", back_populates="organization")
+    documents = relationship("Document", back_populates="organization")
+
+
 class User(Base):
     __tablename__ = "users"
 
     id               = Column(Integer, primary_key=True, index=True)
+    organization_id  = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     username         = Column(String(100), unique=True, nullable=False)
     email            = Column(String(100), unique=True, nullable=False)
     password_hash    = Column(String(60),  nullable=False)
@@ -20,16 +38,20 @@ class User(Base):
     progress_percent = Column(Integer, default=0)
     created_at       = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
+    organization   = relationship("Organization", back_populates="users")
     documents      = relationship("Document",    back_populates="uploader")
     chat_messages  = relationship("ChatMessage", back_populates="user")
     tasks_assigned = relationship("Task", foreign_keys="Task.assigned_to", back_populates="assignee")
     tasks_created  = relationship("Task", foreign_keys="Task.assigned_by", back_populates="creator")
+    leave_requests = relationship("LeaveRequest", foreign_keys="LeaveRequest.user_id",
+                                   back_populates="user", cascade="all, delete-orphan")
 
 
 class Document(Base):
     __tablename__ = "documents"
 
-    id          = Column(Integer, primary_key=True, index=True)
+    id              = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     title       = Column(String(255), nullable=False)
     filepath    = Column(String(512), nullable=False)
     content     = Column(Text, nullable=True)              # extracted text for RAG
@@ -37,8 +59,11 @@ class Document(Base):
     uploaded_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at  = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
+    organization = relationship("Organization", back_populates="documents")
     uploader = relationship("User", back_populates="documents")
     chunks = relationship("DocumentChunk", back_populates="document",
+                          cascade="all, delete-orphan")
+    images = relationship("DocumentImage", back_populates="document",
                           cascade="all, delete-orphan")
 
     @property
@@ -49,10 +74,25 @@ class Document(Base):
     def has_content(self) -> bool:
         return self.content is not None
 
+
+class DocumentImage(Base):
+    """Bilder/Screenshots, die aus einer hochgeladenen PDF-Seite extrahiert wurden."""
+    __tablename__ = "document_images"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
+    page_number = Column(Integer, nullable=False)   # 1-indexiert
+    sequence    = Column(Integer, nullable=False, server_default=text("0"))  # Position im Dokument – für Titel + stabile Reihenfolge
+    filepath    = Column(String(512), nullable=False)
+    created_at  = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    document = relationship("Document", back_populates="images")
+
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
-    id            = Column(Integer, primary_key=True, index=True)
+    id              = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     user_id       = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     user_question = Column(Text, nullable=False)
     ai_response   = Column(Text, nullable=False)
@@ -64,7 +104,8 @@ class ChatMessage(Base):
 class Task(Base):
     __tablename__ = "tasks"
 
-    id           = Column(Integer, primary_key=True, index=True)
+    id              = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
     title        = Column(String(255), nullable=False)
     description  = Column(Text, nullable=True)
     task_type    = Column(String(20),  nullable=False)  # 'Onboarding' | 'Projekt'
@@ -91,3 +132,26 @@ class DocumentChunk(Base):
     created_at  = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
     document = relationship("Document", back_populates="chunks")
+
+
+class LeaveRequest(Base):
+    """Krankmeldung oder Urlaubsantrag eines Mitarbeiters."""
+    __tablename__ = "leave_requests"
+
+    id                 = Column(Integer, primary_key=True, index=True)
+    organization_id    = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    user_id            = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    leave_type         = Column(String(20), nullable=False)             # 'Krankmeldung' | 'Urlaub'
+    start_date         = Column(Date, nullable=False)
+    end_date           = Column(Date, nullable=False)
+    reason             = Column(Text, nullable=True)
+    status             = Column(String(20), nullable=False, server_default=text("'Ausstehend'"))
+    # 'Ausstehend' | 'Genehmigt' | 'Abgelehnt' – Krankmeldung wird sofort 'Genehmigt', Urlaub erst nach Bestätigung
+    substitute_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    decided_by         = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    decided_at         = Column(DateTime, nullable=True)
+    created_at         = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    user       = relationship("User", foreign_keys=[user_id], back_populates="leave_requests")
+    substitute = relationship("User", foreign_keys=[substitute_user_id])
+    decider    = relationship("User", foreign_keys=[decided_by])

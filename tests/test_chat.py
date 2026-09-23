@@ -106,14 +106,15 @@ class TestTaskExplainer:
         assert isinstance(data["explanation"]["steps"], list)
 
     def test_explain_foreign_task_as_mitarbeiter(self, client, auth_headers,
-                                                   db_session, test_users):
+                                                   db_session, test_users, test_org):
         """Mitarbeiter darf fremden Task nicht erklären → 403."""
         from app.models import Task
         other_task = Task(
             title="Fremder Task",
             task_type="Onboarding",
             assigned_to=test_users["leader"].id,
-            is_completed=False
+            is_completed=False,
+            organization_id=test_org.id
         )
         db_session.add(other_task)
         db_session.commit()
