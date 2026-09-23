@@ -340,6 +340,35 @@ Live Context — DB Data (never leaves the network)
 
 ---
 
+## Billing
+
+No Stripe. A company signs up via `/signup` (or `POST /api/auth/signup`)
+and gets a `trial` organization that's active by default. Payment is
+arranged out-of-band (invoice or direct debit), then the operator
+activates or deactivates the org via an owner-only API protected by the
+`ADMIN_TOKEN` header — no customer ever sees these endpoints:
+
+```bash
+# List all organizations and their status
+curl http://localhost:8000/api/platform/organizations \
+  -H "x-admin-token: $ADMIN_TOKEN"
+
+# Activate (optionally with an expiry date; omit active_until for unlimited)
+curl -X POST http://localhost:8000/api/platform/organizations/{id}/activate \
+  -H "x-admin-token: $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"active_until": "2026-12-31T00:00:00"}'
+
+# Deactivate immediately (e.g. invoice unpaid)
+curl -X POST http://localhost:8000/api/platform/organizations/{id}/deactivate \
+  -H "x-admin-token: $ADMIN_TOKEN"
+```
+
+Every authenticated request checks `Organization.is_active` and
+`active_until` (`app/security.py::organization_has_access`) and returns
+`402 Payment Required` once access lapses — no cron job needed.
+
+---
+
 ## Testing
 
 ```bash
@@ -398,14 +427,14 @@ Planned: is_sensitive flag on documents table
 - [x] Verwaltung dashboard — all users, delete, reset passwords
 - [x] pytest — 37 automated tests, all passing
 
-- [x] Multi-tenant data model (`Organization` + `organization_id` on every tenant-scoped table, self-serve `/api/auth/signup`)
+- [x] Multi-tenant data model (`Organization` + `organization_id` on every tenant-scoped table, self-serve `/api/auth/signup` with a matching Signup page)
 - [x] Alembic database migrations
 - [x] Docker containerization (backend, frontend, pgvector Postgres via `docker-compose.yml`)
+- [x] Apple-HIG-inspired glass UI (`frontend/src/theme.css`) applied across all pages
+- [x] Manual billing activation (no Stripe) — `POST /api/platform/organizations/{id}/activate|deactivate`, protected by `ADMIN_TOKEN`, with an optional expiry date. See "Billing" below.
 
 ### 🔜 Planned
 
-- [ ] Signup/onboarding page in the React frontend for `/api/auth/signup`
-- [ ] Stripe billing (subscription plans, webhook → `Organization.plan`)
 - [ ] Local model support (ollama + sentence-transformers) for sensitive documents
 - [ ] Azure OpenAI private deployment for GDPR compliance
 - [ ] Production deployment (Railway / Render + Neon.tech), DNS under `onboardguide.leadspeak.de`
