@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import client from '../api/client';
 
 export default function Login() {
@@ -100,6 +100,12 @@ export default function Login() {
         <p style={s.hint}>
           Neue Firma? <span style={s.signupLink} onClick={() => navigate('/signup')}>Jetzt registrieren</span>
         </p>
+
+        <div style={s.legalRow}>
+          <Link to="/impressum" style={s.legalLink}>Impressum</Link>
+          <Link to="/datenschutz" style={s.legalLink}>Datenschutz</Link>
+          <Link to="/agb" style={s.legalLink}>AGB</Link>
+        </div>
       </div>
     </div>
   );
@@ -124,4 +130,6 @@ const s = {
   button:    { width:'100%', padding:'14px', background:'#e3a24d', color:'#fff', border:'none', borderRadius:'10px', fontSize:'16px', fontWeight:'600', cursor:'pointer', marginBottom:'20px' },
   hint:      { color:'#748998', fontSize:'12px', textAlign:'center', margin:'8px 0 0' },
   signupLink:{ color:'#e3a24d', cursor:'pointer', fontWeight:'600' },
+  legalRow:  { display:'flex', justifyContent:'center', gap:'16px', marginTop:'24px', paddingTop:'20px', borderTop:'1px solid #26343f' },
+  legalLink: { color:'#748998', fontSize:'12px', textDecoration:'none' },
 };

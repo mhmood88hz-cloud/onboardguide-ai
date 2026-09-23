@@ -23,6 +23,14 @@ class SignupRequest(BaseModel):
     password:          str = Field(..., min_length=6)
 
 
+class ContactRequest(BaseModel):
+    """Anfrage einer Firma an den Anbieter – z.B. Abo-Interesse oder
+    allgemeine Frage. Es gibt keinen automatisierten Zahlungsvorgang
+    (siehe Billing); der Anbieter meldet sich manuell zurück."""
+    reason:  Literal["subscribe", "general"]
+    message: Optional[str] = Field(None, max_length=2000)
+
+
 class OrganizationAdminResponse(BaseModel):
     """Für /api/platform/organizations – nur mit ADMIN_TOKEN erreichbar."""
     id:           int

@@ -252,6 +252,56 @@ function NewTaskModal({ team, onClose, onCreated }) {
   );
 }
 
+// ── Abo/Kontakt anfragen Modal ────────────────────────────────────────────
+function ContactModal({ onClose }) {
+  const [reason,  setReason]  = useState('subscribe');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState('');
+
+  const handle = async () => {
+    setLoading(true);
+    try {
+      await client.post('/api/contact', { reason, message: message || null });
+      setMsg('✅ Anfrage gesendet – wir melden uns per E-Mail.');
+      setTimeout(onClose, 1800);
+    } catch (err) {
+      setMsg('❌ ' + (err.response?.data?.detail || 'Fehler beim Senden.'));
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="gx-modal-overlay" style={m.overlay}>
+      <div className="gx-modal" style={m.modal}>
+        <div style={m.header}>
+          <h2 style={{color:'#eef3f7', margin:0}}>Abo / Kontakt anfragen</h2>
+          <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
+        </div>
+        <p style={{color:'#8fa1ae', marginBottom:'16px', fontSize:'13px'}}>
+          Es gibt keine automatische Zahlung – wir melden uns nach deiner Anfrage manuell mit den
+          Konditionen für dein Unternehmen.
+        </p>
+        <label style={m.label}>Anliegen</label>
+        <select className="gx-input" style={m.input} value={reason} onChange={e => setReason(e.target.value)}>
+          <option value="subscribe">Abo-Interesse / Firma freischalten lassen</option>
+          <option value="general">Allgemeine Anfrage</option>
+        </select>
+        <label style={m.label}>Nachricht (optional)</label>
+        <textarea className="gx-input" style={{...m.input, height:'80px', resize:'vertical'}}
+                  placeholder="Möchtest du uns noch etwas mitteilen?"
+                  value={message} onChange={e => setMessage(e.target.value)} />
+        {msg && <p style={{color: msg.startsWith('✅') ? '#4caf6d' : '#e0665a', fontSize:'13px'}}>{msg}</p>}
+        <div style={{display:'flex', gap:'12px', marginTop:'8px'}}>
+          <button className="gx-btn" style={m.btn} onClick={handle} disabled={loading}>
+            {loading ? 'Wird gesendet...' : 'Anfrage senden'}
+          </button>
+          <button className="gx-btn" style={m.cancel} onClick={onClose}>Abbrechen</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate  = useNavigate();
@@ -267,6 +317,7 @@ export default function Dashboard() {
   const [resetMember,   setResetMember]   = useState(null);
   const [showNewUser,   setShowNewUser]   = useState(false);
   const [showNewTask,   setShowNewTask]   = useState(false);
+  const [showContact,   setShowContact]   = useState(false);
 
   const loadTasks = () => {
     client.get(`/api/tasks?user_id=${userId}`)
@@ -338,6 +389,11 @@ export default function Dashboard() {
             {role === 'Verwaltung' && (
               <button className="gx-btn" style={s.newUserBtn} onClick={() => setShowNewUser(true)}>
                 👤 Neuer Benutzer
+              </button>
+            )}
+            {role === 'Verwaltung' && (
+              <button className="gx-btn" style={s.contactBtn} onClick={() => setShowContact(true)}>
+                💳 Abo anfragen
               </button>
             )}
             <button className="gx-btn" style={s.pwBtn} onClick={() => setShowChangePw(true)}>🔑 Passwort</button>
@@ -483,6 +539,7 @@ export default function Dashboard() {
       {resetMember  && <ResetPwModal member={resetMember} onClose={() => setResetMember(null)} />}
       {showNewUser  && <NewUserModal onClose={() => setShowNewUser(false)} onCreated={loadTeam} />}
       {showNewTask  && <NewTaskModal team={team} onClose={() => setShowNewTask(false)} onCreated={loadTasks} />}
+      {showContact  && <ContactModal onClose={() => setShowContact(false)} />}
     </div>
   );
 }
@@ -502,6 +559,7 @@ const s = {
   subtitle:       { color:'#8fa1ae', margin:0, fontSize:'15px' },
   dayBadge:       { background:'#1a2732', color:'#edb268', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
   newUserBtn:     { background:'#1a2732', color:'#A78BFA', border:'1px solid #4C1D95', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  contactBtn:     { background:'#1a2732', color:'#4caf6d', border:'1px solid #1b3a26', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   pwBtn:          { background:'#1a2732', color:'#8fa1ae', border:'1px solid #26343f', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' },
   logoutBtn:      { background:'#e0665a', color:'#fff', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },
   card:           { borderRadius:'18px', padding:'24px', marginBottom:'24px' },

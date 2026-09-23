@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import client from '../api/client';
 
 export default function Signup() {
@@ -121,6 +121,12 @@ export default function Signup() {
         <p style={s.hint}>
           Schon registriert? <span style={s.loginLink} onClick={() => navigate('/login')}>Zum Login</span>
         </p>
+
+        <p style={s.legalHint}>
+          Mit der Registrierung akzeptierst du die{' '}
+          <Link to="/agb" style={s.legalLink}>AGB</Link> und die{' '}
+          <Link to="/datenschutz" style={s.legalLink}>Datenschutzerklärung</Link>.
+        </p>
       </div>
     </div>
   );
@@ -142,4 +148,6 @@ const s = {
   button:    { width:'100%', padding:'14px', background:'#e3a24d', color:'#fff', border:'none', borderRadius:'10px', fontSize:'16px', fontWeight:'600', cursor:'pointer', marginBottom:'20px' },
   hint:      { color:'#748998', fontSize:'12px', textAlign:'center', margin:0 },
   loginLink: { color:'#e3a24d', cursor:'pointer', fontWeight:'600' },
+  legalHint: { color:'#748998', fontSize:'11px', textAlign:'center', marginTop:'16px', lineHeight:'1.6' },
+  legalLink: { color:'#8fa1ae', textDecoration:'underline' },
 };
