@@ -62,6 +62,7 @@ def setup_database():
         conn.execute(text("DELETE FROM document_chunks WHERE document_id IN (SELECT id FROM documents WHERE title LIKE '%pytest%')"))
         conn.execute(text("DELETE FROM documents WHERE title LIKE '%pytest%'"))
         conn.execute(text("DELETE FROM users WHERE username LIKE 'test_%' OR username = 'neuer_mitarbeiter' OR username = 'unerlaubt'"))
+        conn.execute(text("DELETE FROM organizations WHERE slug = 'test-gmbh'"))
         conn.commit()
 
 
