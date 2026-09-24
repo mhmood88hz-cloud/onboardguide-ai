@@ -11,6 +11,11 @@ export default function Admin() {
   const [error,       setError]       = useState('');
   const [activateFor, setActivateFor] = useState(null); // org id currently being activated
   const [untilDate,   setUntilDate]   = useState('');
+  const [billingName,    setBillingName]    = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [invoicesFor,    setInvoicesFor]    = useState(null); // org id, dessen Rechnungen gerade offen sind
+  const [invoices,       setInvoices]       = useState([]);
+  const [invoicesLoading,setInvoicesLoading]= useState(false);
 
   const call = (method, path, data) =>
     axios({
@@ -58,12 +63,49 @@ export default function Admin() {
       await call('post', `/api/platform/organizations/${org.id}/activate`, {
         plan: 'active',
         active_until: untilDate ? new Date(untilDate).toISOString() : null,
+        billing_contact_name: billingName || null,
+        billing_address: billingAddress || null,
       });
       setActivateFor(null);
       setUntilDate('');
+      setBillingName('');
+      setBillingAddress('');
       loadOrgs();
     } catch {
       alert('Fehler beim Freischalten.');
+    }
+  };
+
+  const toggleInvoices = async (org) => {
+    if (invoicesFor === org.id) { setInvoicesFor(null); return; }
+    setInvoicesFor(org.id);
+    setInvoicesLoading(true);
+    try {
+      const res = await call('get', `/api/platform/organizations/${org.id}/invoices`);
+      setInvoices(res.data);
+    } catch {
+      setInvoices([]);
+    } finally {
+      setInvoicesLoading(false);
+    }
+  };
+
+  const downloadInvoice = async (org, invoice) => {
+    try {
+      const res = await axios({
+        method: 'get',
+        url: `${API_URL}/api/platform/organizations/${org.id}/invoices/${invoice.id}/pdf`,
+        headers: { 'x-admin-token': adminToken },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${invoice.invoice_number}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert('Rechnung konnte nicht geladen werden.');
     }
   };
 
@@ -134,33 +176,65 @@ export default function Admin() {
           ) : orgs.map(org => {
             const status = statusOf(org);
             return (
-              <div key={org.id} className="gx-row" style={s.row}>
-                <div style={{flex: 2}}>
-                  <div style={{color: '#eef3f7', fontWeight: '600', fontSize: '14px'}}>{org.name}</div>
-                  <div style={{color: '#748998', fontSize: '12px'}}>{org.slug} · seit {new Date(org.created_at).toLocaleDateString('de-DE')}</div>
+              <div key={org.id}>
+                <div className="gx-row" style={s.row}>
+                  <div style={{flex: 2}}>
+                    <div style={{color: '#eef3f7', fontWeight: '600', fontSize: '14px'}}>{org.name}</div>
+                    <div style={{color: '#748998', fontSize: '12px'}}>{org.slug} · seit {new Date(org.created_at).toLocaleDateString('de-DE')}</div>
+                  </div>
+                  <div style={{flex: 1, color: '#8fa1ae', fontSize: '13px'}}>{org.plan}</div>
+                  <div style={{flex: 2, color: status.color, fontSize: '13px', fontWeight: '600'}}>{status.text}</div>
+                  <div style={{flex: 2, display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center'}}>
+                    {org.is_active ? (
+                      <button className="gx-btn" style={s.dangerBtn} onClick={() => handleDeactivate(org)}>Sperren</button>
+                    ) : activateFor !== org.id && (
+                      <button className="gx-btn" style={s.successBtn} onClick={() => { setActivateFor(org.id); setBillingName(org.billing_contact_name || ''); setBillingAddress(org.billing_address || ''); }}>Freischalten</button>
+                    )}
+                    <button className="gx-btn" style={s.invoiceBtn} onClick={() => toggleInvoices(org)}>
+                      {invoicesFor === org.id ? 'Rechnungen ▲' : 'Rechnungen ▼'}
+                    </button>
+                  </div>
                 </div>
-                <div style={{flex: 1, color: '#8fa1ae', fontSize: '13px'}}>{org.plan}</div>
-                <div style={{flex: 2, color: status.color, fontSize: '13px', fontWeight: '600'}}>{status.text}</div>
-                <div style={{flex: 2, display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center'}}>
-                  {org.is_active ? (
-                    <button className="gx-btn" style={s.dangerBtn} onClick={() => handleDeactivate(org)}>Sperren</button>
-                  ) : activateFor === org.id ? (
-                    <>
-                      <input
-                        className="gx-input"
-                        style={s.dateInput}
-                        type="date"
-                        value={untilDate}
-                        onChange={e => setUntilDate(e.target.value)}
-                        title="Leer lassen für unbefristet"
-                      />
-                      <button className="gx-btn" style={s.successBtn} onClick={() => handleActivate(org)}>Bestätigen</button>
-                      <button className="gx-btn" style={s.cancelBtn} onClick={() => { setActivateFor(null); setUntilDate(''); }}>×</button>
-                    </>
-                  ) : (
-                    <button className="gx-btn" style={s.successBtn} onClick={() => setActivateFor(org.id)}>Freischalten</button>
-                  )}
-                </div>
+
+                {activateFor === org.id && (
+                  <div style={s.activatePanel}>
+                    <label style={s.label}>Freigeschaltet bis (leer = unbefristet)</label>
+                    <input className="gx-input" style={s.dateInput} type="date"
+                           value={untilDate} onChange={e => setUntilDate(e.target.value)} />
+                    <label style={s.label}>Rechnungsempfänger (Kontaktperson)</label>
+                    <input className="gx-input" style={s.panelInput} placeholder="z.B. Max Mustermann"
+                           value={billingName} onChange={e => setBillingName(e.target.value)} />
+                    <label style={s.label}>Rechnungsadresse</label>
+                    <textarea className="gx-input" style={{...s.panelInput, height: '60px', resize: 'vertical'}}
+                              placeholder={"Straße Hausnummer\nPLZ Ort"}
+                              value={billingAddress} onChange={e => setBillingAddress(e.target.value)} />
+                    <div style={{display: 'flex', gap: '8px', marginTop: '4px'}}>
+                      <button className="gx-btn" style={s.successBtn} onClick={() => handleActivate(org)}>Bestätigen &amp; Rechnung erstellen</button>
+                      <button className="gx-btn" style={s.cancelBtn} onClick={() => { setActivateFor(null); setUntilDate(''); setBillingName(''); setBillingAddress(''); }}>Abbrechen</button>
+                    </div>
+                  </div>
+                )}
+
+                {invoicesFor === org.id && (
+                  <div style={s.activatePanel}>
+                    {invoicesLoading ? (
+                      <p style={{color: '#8fa1ae', fontSize: '13px', margin: 0}}>Laden...</p>
+                    ) : invoices.length === 0 ? (
+                      <p style={{color: '#8fa1ae', fontSize: '13px', margin: 0}}>Noch keine Rechnungen.</p>
+                    ) : invoices.map(inv => (
+                      <div key={inv.id} style={s.invoiceRow}>
+                        <span style={{color: '#eef3f7', fontSize: '13px', fontWeight: '600'}}>{inv.invoice_number}</span>
+                        <span style={{color: '#8fa1ae', fontSize: '12px'}}>
+                          {inv.employee_count} × {inv.unit_price_eur.toFixed(2)} € = {inv.total_eur.toFixed(2)} €
+                        </span>
+                        <span style={{color: '#748998', fontSize: '12px'}}>
+                          {new Date(inv.created_at).toLocaleDateString('de-DE')}
+                        </span>
+                        <button className="gx-btn" style={s.downloadBtn} onClick={() => downloadInvoice(org, inv)}>PDF ↓</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -194,5 +268,10 @@ const s = {
   dangerBtn: { background: '#240b08', color: '#e0665a', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
   successBtn:{ background: '#0d1f14', color: '#4caf6d', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600' },
   cancelBtn: { background: '#1a2732', color: '#8fa1ae', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
-  dateInput: { padding: '8px 10px', background: '#0d141c', border: '1px solid #26343f', borderRadius: '8px', color: '#eef3f7', fontSize: '13px', outline: 'none' },
+  dateInput: { padding: '8px 10px', background: '#0d141c', border: '1px solid #26343f', borderRadius: '8px', color: '#eef3f7', fontSize: '13px', outline: 'none', marginBottom: '14px' },
+  invoiceBtn:  { background: '#1a2732', color: '#8fa1ae', border: 'none', padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' },
+  activatePanel: { background: '#0d141c', border: '1px solid #26343f', borderRadius: '12px', padding: '16px 20px', marginBottom: '16px', display: 'flex', flexDirection: 'column' },
+  panelInput:  { width: '100%', padding: '10px 14px', background: '#141e29', border: '1px solid #26343f', borderRadius: '8px', color: '#eef3f7', fontSize: '13px', outline: 'none', boxSizing: 'border-box', marginBottom: '14px' },
+  invoiceRow:  { display: 'flex', alignItems: 'center', gap: '16px', padding: '10px 0', borderBottom: '1px solid #1a2732' },
+  downloadBtn: { marginLeft: 'auto', background: '#1a2732', color: '#edb268', border: 'none', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' },
 };

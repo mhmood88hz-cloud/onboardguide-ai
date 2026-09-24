@@ -374,6 +374,22 @@ curl -X POST http://localhost:8000/api/platform/organizations/{id}/deactivate \
   -H "x-admin-token: $ADMIN_TOKEN"
 ```
 
+`activate` also auto-generates an invoice PDF (`app/services/invoice_service.py`,
+`12 EUR/employee` at the time of activation, sequential number `RE-<year>-<seq>`,
+stored in R2) that the owner can review and send manually — never emailed
+automatically. Optional `billing_contact_name`/`billing_address` in the
+activate request are persisted on the `Organization` and reused by future
+invoices. No VAT is shown (§ 19 UStG / Kleinunternehmerregelung) unless
+`OWNER_VAT_ID` is set. List/download from the Admin UI or:
+
+```bash
+curl http://localhost:8000/api/platform/organizations/{id}/invoices \
+  -H "x-admin-token: $ADMIN_TOKEN"
+
+curl http://localhost:8000/api/platform/organizations/{id}/invoices/{invoice_id}/pdf \
+  -H "x-admin-token: $ADMIN_TOKEN" -o invoice.pdf
+```
+
 Every authenticated request checks `Organization.is_active` and
 `active_until` (`app/security.py::organization_has_access`) and returns
 `402 Payment Required` once access lapses — no cron job needed.

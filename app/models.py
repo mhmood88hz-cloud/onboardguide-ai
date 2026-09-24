@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, Date, ForeignKey, Numeric
 from sqlalchemy import text
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
@@ -24,8 +24,15 @@ class Organization(Base):
     # ohne dass etwas zurückgesetzt werden muss (siehe security.organization_has_access).
     created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
+    # Rechnungsadresse – vom Betreiber beim Freischalten einmalig hinterlegt (siehe
+    # app/routers/platform.py), damit spätere Rechnungen nicht jedes Mal neu abgefragt werden.
+    billing_contact_name = Column(String(150), nullable=True)
+    billing_email        = Column(String(100), nullable=True)
+    billing_address      = Column(Text, nullable=True)
+
     users     = relationship("User", back_populates="organization")
     documents = relationship("Document", back_populates="organization")
+    invoices  = relationship("Invoice", back_populates="organization", cascade="all, delete-orphan")
 
 
 class User(Base):
@@ -191,3 +198,23 @@ class LeaveRequest(Base):
     user       = relationship("User", foreign_keys=[user_id], back_populates="leave_requests")
     substitute = relationship("User", foreign_keys=[substitute_user_id])
     decider    = relationship("User", foreign_keys=[decided_by])
+
+
+class Invoice(Base):
+    """Vom Betreiber beim Freischalten einer Organization automatisch erzeugte Rechnung
+    (siehe app/services/invoice_service.py) – kein Stripe, keine automatisierte Zahlung,
+    nur die Rechnungserstellung selbst ist automatisiert. PDF liegt in R2, nicht in der DB."""
+    __tablename__ = "invoices"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    invoice_number  = Column(String(30), unique=True, nullable=False)  # z.B. "RE-2026-0001"
+    period_start    = Column(Date, nullable=False)
+    period_end      = Column(Date, nullable=True)
+    employee_count  = Column(Integer, nullable=False)
+    unit_price_eur  = Column(Numeric(10, 2), nullable=False)  # Preis/Mitarbeiter zum Rechnungszeitpunkt
+    total_eur       = Column(Numeric(10, 2), nullable=False)
+    pdf_storage_key = Column(String(255), nullable=False)
+    created_at      = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    organization = relationship("Organization", back_populates="invoices")

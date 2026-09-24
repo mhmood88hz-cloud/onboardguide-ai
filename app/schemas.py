@@ -33,13 +33,16 @@ class ContactRequest(BaseModel):
 
 class OrganizationAdminResponse(BaseModel):
     """Für /api/platform/organizations – nur mit ADMIN_TOKEN erreichbar."""
-    id:           int
-    name:         str
-    slug:         str
-    plan:         str
-    is_active:    bool
-    active_until: Optional[datetime] = None
-    created_at:   datetime
+    id:                    int
+    name:                  str
+    slug:                  str
+    plan:                  str
+    is_active:             bool
+    active_until:          Optional[datetime] = None
+    created_at:            datetime
+    billing_contact_name:  Optional[str] = None
+    billing_email:         Optional[str] = None
+    billing_address:       Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -47,6 +50,25 @@ class OrganizationAdminResponse(BaseModel):
 class ActivateOrganizationRequest(BaseModel):
     plan:         Optional[str]      = Field(None, description="z.B. 'active' – Standardwert, wenn leer")
     active_until: Optional[datetime] = Field(None, description="None = unbefristet freigeschaltet")
+    # Rechnungsadresse: optional bei jedem Freischalten mitgeschickt, wird auf der Organization
+    # gespeichert (überschreibt vorherige Werte nur, wenn nicht-leer mitgeschickt) und für die
+    # automatisch erzeugte Rechnung verwendet.
+    billing_contact_name: Optional[str] = None
+    billing_email:        Optional[str] = None
+    billing_address:      Optional[str] = None
+
+
+class InvoiceResponse(BaseModel):
+    id:              int
+    invoice_number:  str
+    period_start:    date
+    period_end:      Optional[date] = None
+    employee_count:  int
+    unit_price_eur:  float
+    total_eur:       float
+    created_at:      datetime
+    class Config:
+        from_attributes = True
 
 
 # ── User ──────────────────────────────────────────────────────────────────
