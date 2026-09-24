@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
+import TrendChart from '../components/TrendChart';
 
 // ── Passwort ändern Modal ─────────────────────────────────────────────────
 function ChangePwModal({ onClose }) {
@@ -444,6 +445,7 @@ export default function Dashboard() {
   const [tasks,   setTasks]   = useState([]);
   const [team,    setTeam]    = useState([]);
   const [loading, setLoading] = useState(true);
+  const [trend,   setTrend]   = useState(null);
 
   const [showChangePw,  setShowChangePw]  = useState(false);
   const [resetMember,   setResetMember]   = useState(null);
@@ -469,7 +471,13 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => { loadTasks(); loadTeam(); }, [userId]);
+  useEffect(() => {
+    loadTasks();
+    loadTeam();
+    client.get(`/api/tasks/progress-trend?user_id=${userId}&days=30`)
+      .then(res => setTrend(res.data))
+      .catch(() => {});
+  }, [userId]);
 
   const completed = tasks.filter(t => t.is_completed).length;
   const total     = tasks.length;
@@ -560,6 +568,17 @@ export default function Dashboard() {
             </p>
           )}
         </div>
+
+        {/* Fortschritt über Zeit */}
+        {trend && total > 0 && (
+          <div className="gx-card gx-card--hover" style={s.card}>
+            <TrendChart
+              title="Fortschritt über Zeit (30 Tage)"
+              unit="%"
+              points={trend.points.map(p => ({ date: p.date, value: p.completed_percent }))}
+            />
+          </div>
+        )}
 
         {/* Team Block */}
         {canManageTeam && (

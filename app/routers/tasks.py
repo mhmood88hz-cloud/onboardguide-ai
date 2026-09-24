@@ -1,11 +1,11 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Task
-from app.schemas import TaskCreate, TaskResponse, TeamMemberProgress
+from app.schemas import TaskCreate, TaskResponse, TeamMemberProgress, ProgressTrendPoint, ProgressTrendResponse
 from app.security import get_current_user, load_current_user
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
@@ -63,6 +63,47 @@ def get_user_tasks(
     if not target:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden!")
     return db.query(Task).filter(Task.assigned_to == user_id).all()
+
+
+@router.get("/progress-trend", response_model=ProgressTrendResponse)
+def get_progress_trend(
+    user_id:      int,
+    days:         int     = 30,
+    db:           Session = Depends(get_db),
+    requester_id: int     = Depends(get_current_user)
+):
+    """Kumulierter Onboarding-Fortschritt (% erledigter Aufgaben) je Tag der letzten
+    `days` Tage – aus den vorhandenen Task.completed_at-Zeitstempeln berechnet,
+    kein Snapshot/Schema nötig."""
+    requester = load_current_user(requester_id, db)
+    target = db.query(User).filter(
+        User.id == user_id,
+        User.organization_id == requester.organization_id
+    ).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden!")
+
+    days = max(1, min(days, 90))
+    tasks = db.query(Task).filter(Task.assigned_to == user_id).all()
+    total = len(tasks)
+
+    today = datetime.now(timezone.utc).date()
+    start = today - timedelta(days=days - 1)
+    points = []
+    for i in range(days):
+        d = start + timedelta(days=i)
+        if total == 0:
+            percent = 0
+        else:
+            completed = sum(1 for t in tasks if t.completed_at and t.completed_at.date() <= d)
+            percent = round(completed / total * 100)
+        points.append(ProgressTrendPoint(date=d, completed_percent=percent))
+
+    return ProgressTrendResponse(
+        points=points,
+        total_tasks=total,
+        completed_tasks=sum(1 for t in tasks if t.is_completed),
+    )
 
 
 @router.put("/{task_id}/complete", response_model=TaskResponse)

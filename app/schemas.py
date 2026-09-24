@@ -121,6 +121,17 @@ class OnboardingTemplateResponse(BaseModel):
         from_attributes = True
 
 
+# ── Fortschritt über Zeit ─────────────────────────────────────────────────
+class ProgressTrendPoint(BaseModel):
+    date:              date
+    completed_percent: int
+
+class ProgressTrendResponse(BaseModel):
+    points:          List[ProgressTrendPoint]
+    total_tasks:     int
+    completed_tasks: int
+
+
 # ── Leader ────────────────────────────────────────────────────────────────
 class TeamMemberProgress(BaseModel):
     id:               int
