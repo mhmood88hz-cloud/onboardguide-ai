@@ -59,7 +59,8 @@ class UserBase(BaseModel):
     reports_to:       Optional[int] = None
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6)
+    password:    str           = Field(..., min_length=6)
+    template_id: Optional[int] = Field(None, description="Onboarding-Vorlage, deren Aufgaben dem neuen Benutzer sofort zugewiesen werden")
 
 class UserResponse(UserBase):
     id:               int
@@ -89,6 +90,33 @@ class TaskResponse(TaskBase):
     is_completed: bool
     completed_at: Optional[datetime]
     created_at:   datetime
+    class Config:
+        from_attributes = True
+
+
+# ── Onboarding-Vorlagen ───────────────────────────────────────────────────
+class OnboardingTemplateItemCreate(BaseModel):
+    title:       str = Field(..., min_length=3, max_length=255)
+    description: Optional[str] = None
+    task_type:   Literal["Onboarding", "Projekt"] = "Onboarding"
+
+class OnboardingTemplateItemResponse(OnboardingTemplateItemCreate):
+    id:          int
+    order_index: int
+    class Config:
+        from_attributes = True
+
+class OnboardingTemplateCreate(BaseModel):
+    name:       str = Field(..., min_length=3, max_length=150)
+    department: Optional[str] = None
+    items:      List[OnboardingTemplateItemCreate] = Field(..., min_length=1)
+
+class OnboardingTemplateResponse(BaseModel):
+    id:         int
+    name:       str
+    department: Optional[str] = None
+    created_at: datetime
+    items:      List[OnboardingTemplateItemResponse]
     class Config:
         from_attributes = True
 

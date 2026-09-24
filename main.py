@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from pathlib import Path
 
 from app.database import get_db
-from app.routers import auth, users, tasks, documents, chat, ws, leave, platform, contact
+from app.routers import auth, users, tasks, documents, chat, ws, leave, platform, contact, templates
 from app.services.rate_limit import limiter
 from app.services.ws_manager import manager
 
@@ -63,6 +63,7 @@ app.include_router(chat.router)
 app.include_router(leave.router)
 app.include_router(platform.router)
 app.include_router(contact.router)
+app.include_router(templates.router)
 app.include_router(ws.router)
 
 

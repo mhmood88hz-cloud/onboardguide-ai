@@ -1,9 +1,9 @@
 import json
 import re
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
-from app.models import User, Organization
+from app.models import User, Organization, OnboardingTemplate, Task
 from app.schemas import (
     UserCreate, UserResponse, LoginRequest, TokenResponse,
     ChangePasswordRequest, ResetPasswordRequest, SignupRequest,
@@ -195,6 +195,15 @@ async def register_user(
         if not manager_user:
             raise HTTPException(status_code=404, detail="reports_to: Benutzer nicht in dieser Firma gefunden!")
 
+    template = None
+    if user.template_id is not None:
+        template = db.query(OnboardingTemplate).options(joinedload(OnboardingTemplate.items)).filter(
+            OnboardingTemplate.id == user.template_id,
+            OnboardingTemplate.organization_id == current_user.organization_id
+        ).first()
+        if not template:
+            raise HTTPException(status_code=404, detail="Onboarding-Vorlage nicht gefunden!")
+
     log_step("Router", "Security",
              "Passwort hashen",
              "bcrypt mit zufälligem Salt → 60-Zeichen Hash.")
@@ -212,6 +221,21 @@ async def register_user(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    if template is not None:
+        for item in template.items:
+            db.add(Task(
+                organization_id=current_user.organization_id,
+                title=item.title,
+                description=item.description,
+                task_type=item.task_type,
+                assigned_to=new_user.id,
+                assigned_by=current_user.id,
+            ))
+        db.commit()
+        log_step("Database", "Database",
+                 "Onboarding-Vorlage angewendet",
+                 f"{len(template.items)} Aufgabe(n) aus Vorlage '{template.name}' automatisch zugewiesen.")
 
     log_step("Security", "Database",
              "Benutzer in DB angelegt",

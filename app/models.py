@@ -124,6 +124,37 @@ class Task(Base):
     assignee = relationship("User", foreign_keys=[assigned_to], back_populates="tasks_assigned")
     creator  = relationship("User", foreign_keys=[assigned_by], back_populates="tasks_created")
 
+class OnboardingTemplate(Base):
+    """Wiederverwendbare Checkliste (z.B. 'Standard-Onboarding IT-Abteilung'), die Verwaltung
+    einmal definiert und dann pro neuem Mitarbeiter anwendet statt Aufgaben einzeln anzulegen."""
+    __tablename__ = "onboarding_templates"
+
+    id              = Column(Integer, primary_key=True, index=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    name            = Column(String(150), nullable=False)
+    department      = Column(String(100), nullable=True)  # optionale Zuordnung, nur informativ
+    created_by      = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at      = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    items = relationship("OnboardingTemplateItem", back_populates="template",
+                          cascade="all, delete-orphan", order_by="OnboardingTemplateItem.order_index")
+
+
+class OnboardingTemplateItem(Base):
+    """Eine einzelne Checklisten-Zeile einer OnboardingTemplate – wird beim Anwenden 1:1 in
+    eine Task für den neuen Mitarbeiter umgewandelt."""
+    __tablename__ = "onboarding_template_items"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    template_id  = Column(Integer, ForeignKey("onboarding_templates.id", ondelete="CASCADE"), nullable=False)
+    title        = Column(String(255), nullable=False)
+    description  = Column(Text, nullable=True)
+    task_type    = Column(String(20), nullable=False, server_default=text("'Onboarding'"))
+    order_index  = Column(Integer, nullable=False, server_default=text("0"))
+
+    template = relationship("OnboardingTemplate", back_populates="items")
+
+
 class DocumentChunk(Base):
     __tablename__ = "document_chunks"
 

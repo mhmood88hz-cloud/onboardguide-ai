@@ -91,12 +91,17 @@ function NewUserModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
     username: '', email: '', password: '',
     user_role: 'Mitarbeiter', department: '',
-    assigned_project: '', reports_to: ''
+    assigned_project: '', reports_to: '', template_id: ''
   });
+  const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [msg,     setMsg]     = useState('');
 
   const set = (k, v) => setForm(f => ({...f, [k]: v}));
+
+  useEffect(() => {
+    client.get('/api/templates').then(res => setTemplates(res.data)).catch(() => {});
+  }, []);
 
   const handle = async () => {
     if (!form.username || !form.email || !form.password) {
@@ -112,6 +117,7 @@ function NewUserModal({ onClose, onCreated }) {
         department:       form.department   || null,
         assigned_project: form.assigned_project || null,
         reports_to:       form.reports_to   ? parseInt(form.reports_to) : null,
+        template_id:      form.template_id  ? parseInt(form.template_id) : null,
       });
       setMsg(`✅ Benutzer '${form.username}' erstellt.`);
       setTimeout(() => { onCreated(); onClose(); }, 1200);
@@ -158,6 +164,14 @@ function NewUserModal({ onClose, onCreated }) {
         <label style={m.label}>Leader ID (reports_to)</label>
         <input className="gx-input" style={m.input} placeholder="ID des direkten Leaders"
                value={form.reports_to} onChange={e => set('reports_to', e.target.value)} />
+
+        <label style={m.label}>Onboarding-Vorlage</label>
+        <select className="gx-input" style={m.input} value={form.template_id} onChange={e => set('template_id', e.target.value)}>
+          <option value="">Keine — Aufgaben manuell zuweisen</option>
+          {templates.map(t => (
+            <option key={t.id} value={t.id}>{t.name} ({t.items.length} Aufgaben)</option>
+          ))}
+        </select>
 
         {msg && <p style={{color: msg.startsWith('✅') ? '#4caf6d' : '#e0665a', fontSize:'13px'}}>{msg}</p>}
 
@@ -252,6 +266,124 @@ function NewTaskModal({ team, onClose, onCreated }) {
   );
 }
 
+// ── Onboarding-Vorlagen verwalten Modal (nur Verwaltung) ──────────────────
+function TemplatesModal({ onClose }) {
+  const [templates, setTemplates] = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [showNew,   setShowNew]   = useState(false);
+  const [form, setForm] = useState({ name: '', department: '', items: [{ title: '', description: '' }] });
+  const [msg, setMsg] = useState('');
+
+  const loadTemplates = () => {
+    setLoading(true);
+    client.get('/api/templates').then(res => setTemplates(res.data)).catch(() => {}).finally(() => setLoading(false));
+  };
+  useEffect(() => { loadTemplates(); }, []);
+
+  const setItem = (i, k, v) => setForm(f => ({
+    ...f, items: f.items.map((it, idx) => idx === i ? { ...it, [k]: v } : it)
+  }));
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { title: '', description: '' }] }));
+  const removeItem = (i) => setForm(f => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }));
+
+  const handleCreate = async () => {
+    const items = form.items.filter(it => it.title.trim());
+    if (!form.name.trim() || items.length === 0) {
+      setMsg('Name und mindestens eine Aufgabe sind Pflichtfelder.'); return;
+    }
+    try {
+      await client.post('/api/templates', {
+        name: form.name, department: form.department || null,
+        items: items.map(it => ({ title: it.title, description: it.description || null, task_type: 'Onboarding' })),
+      });
+      setForm({ name: '', department: '', items: [{ title: '', description: '' }] });
+      setShowNew(false);
+      setMsg('');
+      loadTemplates();
+    } catch (err) {
+      setMsg('❌ ' + (err.response?.data?.detail || 'Fehler beim Erstellen.'));
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Diese Vorlage wirklich löschen?')) return;
+    try {
+      await client.delete(`/api/templates/${id}`);
+      loadTemplates();
+    } catch { alert('Fehler beim Löschen.'); }
+  };
+
+  return (
+    <div className="gx-modal-overlay" style={m.overlay}>
+      <div className="gx-modal" style={{...m.modal, maxWidth:'560px', maxHeight:'90vh', overflowY:'auto'}}>
+        <div style={m.header}>
+          <h2 style={{color:'#eef3f7', margin:0}}>Onboarding-Vorlagen</h2>
+          <button className="gx-btn" style={m.close} onClick={onClose}>✕</button>
+        </div>
+
+        {loading ? (
+          <p style={{color:'#8fa1ae'}}>Laden...</p>
+        ) : templates.length === 0 ? (
+          <p style={{color:'#8fa1ae', marginBottom:'16px'}}>Noch keine Vorlagen vorhanden.</p>
+        ) : templates.map(t => (
+          <div key={t.id} className="gx-row" style={{padding:'12px 0', borderBottom:'1px solid #1a2732'}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+              <div>
+                <div style={{color:'#eef3f7', fontWeight:'600', fontSize:'14px'}}>{t.name}</div>
+                <div style={{color:'#748998', fontSize:'12px'}}>
+                  {t.department ? `${t.department} · ` : ''}{t.items.length} Aufgabe(n)
+                </div>
+              </div>
+              <button className="gx-btn" style={{background:'#240b08', color:'#e0665a', border:'none', padding:'6px 10px', borderRadius:'8px', cursor:'pointer', fontSize:'13px'}}
+                      onClick={() => handleDelete(t.id)}>Löschen</button>
+            </div>
+            <ul style={{margin:'8px 0 0', paddingLeft:'18px', color:'#8fa1ae', fontSize:'13px'}}>
+              {t.items.map(it => <li key={it.id}>{it.title}</li>)}
+            </ul>
+          </div>
+        ))}
+
+        {!showNew ? (
+          <button className="gx-btn" style={{...m.btn, marginTop:'16px'}} onClick={() => setShowNew(true)}>
+            + Neue Vorlage
+          </button>
+        ) : (
+          <div style={{marginTop:'16px', paddingTop:'16px', borderTop:'1px solid #1a2732'}}>
+            <label style={m.label}>Name *</label>
+            <input className="gx-input" style={m.input} placeholder="z.B. Standard-Onboarding IT"
+                   value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+
+            <label style={m.label}>Abteilung (optional)</label>
+            <input className="gx-input" style={m.input} placeholder="z.B. IT"
+                   value={form.department} onChange={e => setForm(f => ({...f, department: e.target.value}))} />
+
+            <label style={m.label}>Aufgaben *</label>
+            {form.items.map((it, i) => (
+              <div key={i} style={{display:'flex', gap:'8px', marginBottom:'8px'}}>
+                <input className="gx-input" style={{...m.input, marginBottom:0, flex:1}} placeholder="Aufgabentitel"
+                       value={it.title} onChange={e => setItem(i, 'title', e.target.value)} />
+                {form.items.length > 1 && (
+                  <button className="gx-btn" style={{background:'#1a2732', color:'#8fa1ae', border:'none', borderRadius:'8px', padding:'0 12px', cursor:'pointer'}}
+                          onClick={() => removeItem(i)}>×</button>
+                )}
+              </div>
+            ))}
+            <button className="gx-btn" style={{background:'#1a2732', color:'#8fa1ae', border:'none', padding:'8px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', marginBottom:'16px'}}
+                    onClick={addItem}>+ Aufgabe hinzufügen</button>
+
+            {msg && <p style={{color:'#e0665a', fontSize:'13px'}}>{msg}</p>}
+
+            <div style={{display:'flex', gap:'12px'}}>
+              <button className="gx-btn" style={m.btn} onClick={handleCreate}>Vorlage speichern</button>
+              <button className="gx-btn" style={m.cancel} onClick={() => setShowNew(false)}>Abbrechen</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Abo/Kontakt anfragen Modal ────────────────────────────────────────────
 function ContactModal({ onClose }) {
   const [reason,  setReason]  = useState('subscribe');
@@ -318,6 +450,7 @@ export default function Dashboard() {
   const [showNewUser,   setShowNewUser]   = useState(false);
   const [showNewTask,   setShowNewTask]   = useState(false);
   const [showContact,   setShowContact]   = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   const loadTasks = () => {
     client.get(`/api/tasks?user_id=${userId}`)
@@ -389,6 +522,11 @@ export default function Dashboard() {
             {role === 'Verwaltung' && (
               <button className="gx-btn" style={s.newUserBtn} onClick={() => setShowNewUser(true)}>
                 👤 Neuer Benutzer
+              </button>
+            )}
+            {role === 'Verwaltung' && (
+              <button className="gx-btn" style={s.templatesBtn} onClick={() => setShowTemplates(true)}>
+                📋 Vorlagen
               </button>
             )}
             {role === 'Verwaltung' && (
@@ -540,6 +678,7 @@ export default function Dashboard() {
       {showNewUser  && <NewUserModal onClose={() => setShowNewUser(false)} onCreated={loadTeam} />}
       {showNewTask  && <NewTaskModal team={team} onClose={() => setShowNewTask(false)} onCreated={loadTasks} />}
       {showContact  && <ContactModal onClose={() => setShowContact(false)} />}
+      {showTemplates && <TemplatesModal onClose={() => setShowTemplates(false)} />}
     </div>
   );
 }
@@ -559,6 +698,7 @@ const s = {
   subtitle:       { color:'#8fa1ae', margin:0, fontSize:'15px' },
   dayBadge:       { background:'#1a2732', color:'#edb268', padding:'8px 16px', borderRadius:'20px', fontSize:'13px' },
   newUserBtn:     { background:'#1a2732', color:'#A78BFA', border:'1px solid #4C1D95', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
+  templatesBtn:   { background:'#1a2732', color:'#edb268', border:'1px solid #4a3212', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   contactBtn:     { background:'#1a2732', color:'#4caf6d', border:'1px solid #1b3a26', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px', fontWeight:'600' },
   pwBtn:          { background:'#1a2732', color:'#8fa1ae', border:'1px solid #26343f', padding:'10px 14px', borderRadius:'8px', cursor:'pointer', fontSize:'13px' },
   logoutBtn:      { background:'#e0665a', color:'#fff', border:'none', padding:'10px 20px', borderRadius:'8px', cursor:'pointer', fontWeight:'600' },

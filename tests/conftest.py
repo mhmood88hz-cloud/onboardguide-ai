@@ -59,6 +59,7 @@ def setup_database():
     with engine_test.connect() as conn:
         conn.execute(text("DELETE FROM chat_messages WHERE user_id IN (SELECT id FROM users WHERE username LIKE 'test_%')"))
         conn.execute(text("DELETE FROM tasks WHERE title LIKE '%pytest%' OR title LIKE '%Test Task%' OR title LIKE '%Fremder%' OR title LIKE '%Verwaltung Test%' OR title LIKE '%Neuer Test%'"))
+        conn.execute(text("DELETE FROM onboarding_templates WHERE name LIKE '%pytest%'"))
         conn.execute(text("DELETE FROM document_chunks WHERE document_id IN (SELECT id FROM documents WHERE title LIKE '%pytest%')"))
         conn.execute(text("DELETE FROM documents WHERE title LIKE '%pytest%'"))
         conn.execute(text("DELETE FROM users WHERE username LIKE 'test_%' OR username = 'neuer_mitarbeiter' OR username = 'unerlaubt'"))
