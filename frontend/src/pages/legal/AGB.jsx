@@ -35,11 +35,12 @@ export default function AGB() {
       <div>
         <h2 style={s.h2}>4. Preise, Nutzungsmodell und Zahlung</h2>
         <p>
-          Es findet aktuell kein automatisierter Zahlungsvorgang innerhalb der Anwendung statt. Nach der
-          Registrierung kann über die Kontakt-/Abo-Funktion in der Anwendung eine Freischaltung angefragt
-          werden; der Anbieter meldet sich daraufhin manuell mit den individuellen Konditionen (z.B. Rechnung
-          oder Lastschrift), bevor ein kostenpflichtiges Nutzungsverhältnis zustande kommt. [TODO: konkrete
-          Preise/Zahlungsmodalitäten ergänzen, sobald ein Plan-Modell final feststeht.]
+          Der Standard-Tarif kostet 12 € pro aktivem Mitarbeiter-Account und Monat, zzgl. gesetzlicher
+          Umsatzsteuer. Es gibt keine Mindestvertragslaufzeit und keine Einrichtungsgebühr. Es findet aktuell
+          kein automatisierter Zahlungsvorgang innerhalb der Anwendung statt: Nach der Registrierung kann über
+          die Kontakt-/Abo-Funktion in der Anwendung eine Freischaltung angefragt werden; der Anbieter meldet
+          sich daraufhin manuell mit den individuellen Konditionen (z.B. Rechnung oder Lastschrift), bevor ein
+          kostenpflichtiges Nutzungsverhältnis zustande kommt.
         </p>
       </div>
 
