@@ -446,6 +446,9 @@ export default function Dashboard() {
   const [team,    setTeam]    = useState([]);
   const [loading, setLoading] = useState(true);
   const [trend,   setTrend]   = useState(null);
+  const [showLeadSpeakPromo, setShowLeadSpeakPromo] = useState(
+    () => localStorage.getItem('hide_leadspeak_promo') !== 'true'
+  );
 
   const [showChangePw,  setShowChangePw]  = useState(false);
   const [resetMember,   setResetMember]   = useState(null);
@@ -689,6 +692,28 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+
+        {/* LeadSpeak AI Cross-Sell (nur Verwaltung) */}
+        {role === 'Verwaltung' && showLeadSpeakPromo && (
+          <div className="gx-card" style={s.promoCard}>
+            <button
+              style={s.promoClose}
+              onClick={() => { localStorage.setItem('hide_leadspeak_promo', 'true'); setShowLeadSpeakPromo(false); }}
+              aria-label="Hinweis ausblenden"
+            >✕</button>
+            <div style={{fontSize:'24px'}}>🎤</div>
+            <div style={{flex:1}}>
+              <p style={s.promoTitle}>Auch an Kommunikationstraining für dein Team interessiert?</p>
+              <p style={s.promoText}>
+                LeadSpeak AI ist unser Schwesterprodukt für Sprech- und Präsentationstraining mit
+                KI-Feedback — ideal, um frisch eingearbeitete Mitarbeiter:innen weiter zu fördern.
+              </p>
+            </div>
+            <a href="https://leadspeak.de" target="_blank" rel="noreferrer" style={s.promoBtn}>
+              Ansehen →
+            </a>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -744,6 +769,11 @@ const s = {
   openBadge:      { background:'#1a2732', color:'#8fa1ae', padding:'4px 10px', borderRadius:'6px', fontSize:'12px' },
   continueBtn:    { background:'#edb268', color:'#fff', border:'none', padding:'8px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
   startBtn:       { background:'#1a2732', color:'#eef3f7', border:'none', padding:'8px 18px', borderRadius:'8px', cursor:'pointer', fontWeight:'600', fontSize:'13px' },
+  promoCard:      { position:'relative', display:'flex', alignItems:'center', gap:'16px', borderRadius:'18px', padding:'20px 24px', marginBottom:'24px', border:'1px solid #4a3212' },
+  promoClose:     { position:'absolute', top:'12px', right:'12px', background:'none', border:'none', color:'#8fa1ae', fontSize:'14px', cursor:'pointer' },
+  promoTitle:     { color:'#eef3f7', fontWeight:'600', fontSize:'14px', margin:'0 0 4px' },
+  promoText:      { color:'#8fa1ae', fontSize:'13px', margin:0, maxWidth:'520px' },
+  promoBtn:       { background:'#edb268', color:'#1a1206', border:'none', padding:'10px 18px', borderRadius:'8px', fontWeight:'700', fontSize:'13px', textDecoration:'none', whiteSpace:'nowrap' },
 };
 
 const m = {
