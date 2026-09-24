@@ -9,7 +9,7 @@ export default function Impressum() {
         <h2 style={s.h2}>Anbieter</h2>
         <p>
           Mahmood AL-Djabboori<br />
-          [TODO: Straße und Hausnummer]<br />
+          Bokensdorfer Weg 21A<br />
           38524 Sassenburg<br />
           Deutschland
         </p>
