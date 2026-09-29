@@ -2,11 +2,25 @@ import time
 from datetime import date, timedelta
 from openai import OpenAI
 from sqlalchemy.orm import Session
-from app.config import OPENAI_API_KEY, OPENAI_MODEL, CHAT_HISTORY_LIMIT
+from app.config import OPENAI_API_KEY, OPENAI_MODEL, GROQ_API_KEY, GROQ_MODEL, CHAT_HISTORY_LIMIT
 from app.models import User, Document, ChatMessage
 from app.schemas import TaskExplanationLLMResponse
 
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+# Groq ist ein reiner Chat-Completions-Provider (kein Embeddings/kein gpt-5-mini) – wird deshalb
+# nur fuer run_rag_chat/run_task_explanation genutzt, nicht in chunking_service.py (Embeddings)
+# und nicht in run_model_comparison (vergleicht gezielt zwei echte OpenAI-Modelle).
+_groq_client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1") if GROQ_API_KEY else None
+
+
+def get_chat_client_and_model():
+    from fastapi import HTTPException
+    if _groq_client:
+        return _groq_client, GROQ_MODEL
+    if client:
+        return client, OPENAI_MODEL
+    raise HTTPException(status_code=503, detail="No chat provider configured.")
 
 COMPARE_MODELS = ["gpt-4o-mini", "gpt-5-mini"]
 
@@ -327,7 +341,7 @@ def run_rag_chat(
     current_user: User, question: str, db: Session
 ) -> tuple[str, list[str], list[dict], list[dict]]:
     """Alle drei Säulen + Live Context."""
-    openai_client = get_client()
+    chat_client, model = get_chat_client_and_model()
 
     system_prompt                       = build_system_prompt(current_user)
     history                             = build_conversation_history(current_user, db)
@@ -338,10 +352,10 @@ def run_rag_chat(
         system_prompt, history, context_text, question, live_context
     )
 
-    response = openai_client.chat.completions.create(
-        model=OPENAI_MODEL,
+    response = chat_client.chat.completions.create(
+        model=model,
         messages=messages,
-        temperature=SUPPORTED_TEMPERATURE.get(OPENAI_MODEL, 0.4)
+        temperature=SUPPORTED_TEMPERATURE.get(model, 0.4)
     )
 
     return response.choices[0].message.content, titles, stats, images
@@ -399,7 +413,7 @@ def run_task_explanation(
     current_user: User, task, db: Session
 ) -> TaskExplanationLLMResponse:
     """Structured Outputs für Task-Erklärung."""
-    openai_client = get_client()
+    chat_client, model = get_chat_client_and_model()
 
     system_prompt = (
         f"You are an experienced onboarding coach. "
@@ -415,13 +429,13 @@ def run_task_explanation(
         f"Type: {task.task_type}"
     )
 
-    response = openai_client.beta.chat.completions.parse(
-        model=OPENAI_MODEL,
+    response = chat_client.beta.chat.completions.parse(
+        model=model,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": prompt_content}
         ],
         response_format=TaskExplanationLLMResponse,
-        temperature=SUPPORTED_TEMPERATURE.get(OPENAI_MODEL, 0.4)
+        temperature=SUPPORTED_TEMPERATURE.get(model, 0.4)
     )
     return response.choices[0].message.parsed

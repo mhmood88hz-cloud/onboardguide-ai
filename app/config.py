@@ -17,9 +17,16 @@ DATABASE_URL = SA_URL.create(
 # Security
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
-# OpenAI
+# OpenAI (weiterhin fuer Embeddings/Modellvergleich noetig, siehe chunking_service.py und
+# ai_service.run_model_comparison – Groq bietet keine Embeddings und nicht die dort verglichenen
+# OpenAI-Modelle)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL   = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+# Groq (guenstiger/schneller Chat-Provider, OpenAI-kompatibel). Wenn gesetzt, hat Vorrang vor
+# OPENAI_API_KEY fuer run_rag_chat/run_task_explanation (siehe ai_service.py).
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL   = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # Chat settings
 CHAT_HISTORY_LIMIT = 5
