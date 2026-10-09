@@ -36,7 +36,7 @@ export default function Login() {
           <span style={s.logoIcon}>➜]</span>
           <span style={s.logoText}>OnboardGuide AI</span>
         </div>
-        <p style={s.tagline}>Your intelligent onboarding companion</p>
+        <p style={s.tagline}>Damit neue Mitarbeitende ab Tag 1 produktiv sind.</p>
 
         {/* Username */}
         <label style={s.label}>Email or Username</label>

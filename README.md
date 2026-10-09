@@ -1,5 +1,9 @@
 # OnboardGuide AI 🤖
 
+**Damit neue Mitarbeitende ab Tag 1 produktiv sind — ohne dass HR ihnen hinterherläuft.**
+
+Echte Antworten aus euren eigenen Dokumenten. Jede Rolle sieht nur ihr Material. Fortschritt in Echtzeit fürs Team.
+
 > *From Latin "onboarding" (Einarbeitung) and German "Leitfaden" (guide) — OnboardGuide AI is an intelligent HR onboarding assistant that meets new employees where they are: answering real questions from real company documents, not generic tutorials.*
 
 Upload company policies, project plans, and handbooks. OnboardGuide extracts relevant context, builds a personal knowledge base per role, and lets employees chat with an AI that knows exactly what documents they are allowed to see — and what tasks they still have open.
