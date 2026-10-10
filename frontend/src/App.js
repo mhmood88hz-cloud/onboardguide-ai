@@ -10,6 +10,7 @@ import Admin     from './pages/Admin';
 import Impressum  from './pages/legal/Impressum';
 import Datenschutz from './pages/legal/Datenschutz';
 import AGB        from './pages/legal/AGB';
+import FAQ        from './pages/legal/FAQ';
 
 function PrivateRoute({ children }) {
   const token = localStorage.getItem('token');
@@ -31,6 +32,7 @@ function App() {
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/datenschutz" element={<Datenschutz />} />
         <Route path="/agb" element={<AGB />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="*"          element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>

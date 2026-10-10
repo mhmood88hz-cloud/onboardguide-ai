@@ -102,6 +102,7 @@ export default function Login() {
         </p>
 
         <div style={s.legalRow}>
+          <Link to="/faq" style={s.legalLink}>FAQ</Link>
           <Link to="/impressum" style={s.legalLink}>Impressum</Link>
           <Link to="/datenschutz" style={s.legalLink}>Datenschutz</Link>
           <Link to="/agb" style={s.legalLink}>AGB</Link>
