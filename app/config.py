@@ -28,6 +28,12 @@ OPENAI_MODEL   = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL   = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
+# OpenRouter (OpenAI-kompatibel, deckt Chat UND Embeddings ab). Wenn gesetzt, hat Vorrang vor Groq
+# und OPENAI_API_KEY fuer Chat (ai_service.py) und Embeddings (chunking_service.py). Das Modell
+# ist per OPENROUTER_MODEL frei waehlbar (Format "anbieter/modell", z.B. "openai/gpt-4o-mini").
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_MODEL   = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
+
 # Chat settings
 CHAT_HISTORY_LIMIT = 5
 

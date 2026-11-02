@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from app.services.chunking_service import embed_document
+from app.services.chunking_service import embed_document, EMBEDDING_MODEL
 
 
 def test_embed_document_returns_stats():
@@ -23,7 +23,7 @@ def test_embed_document_returns_stats():
 
         assert isinstance(result, dict), "Das Ergebnis sollte ein Dictionary sein."
         assert result['chunks_created'] == 1
-        assert result['embedding_model'] == "text-embedding-3-small"
+        assert result['embedding_model'] == EMBEDDING_MODEL
         assert 'elapsed_seconds' in result
         mock_create_embedding.assert_called_once()
         mock_db.add.assert_called_once()

@@ -2,7 +2,10 @@ import time
 from datetime import date, timedelta
 from openai import OpenAI
 from sqlalchemy.orm import Session
-from app.config import OPENAI_API_KEY, OPENAI_MODEL, GROQ_API_KEY, GROQ_MODEL, CHAT_HISTORY_LIMIT
+from app.config import (
+    OPENAI_API_KEY, OPENAI_MODEL, GROQ_API_KEY, GROQ_MODEL,
+    OPENROUTER_API_KEY, OPENROUTER_MODEL, CHAT_HISTORY_LIMIT,
+)
 from app.models import User, Document, ChatMessage
 from app.schemas import TaskExplanationLLMResponse
 
@@ -14,8 +17,13 @@ client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 _groq_client = OpenAI(api_key=GROQ_API_KEY, base_url="https://api.groq.com/openai/v1") if GROQ_API_KEY else None
 
 
+_openrouter_client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1") if OPENROUTER_API_KEY else None
+
+
 def get_chat_client_and_model():
     from fastapi import HTTPException
+    if _openrouter_client:
+        return _openrouter_client, OPENROUTER_MODEL
     if _groq_client:
         return _groq_client, GROQ_MODEL
     if client:

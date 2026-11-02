@@ -3,13 +3,18 @@ import time
 from typing import List, Dict
 from openai import OpenAI
 from sqlalchemy.orm import Session
-from app.config import OPENAI_API_KEY, CHUNK_SIZE, CHUNK_OVERLAP, TOP_K_CHUNKS
+from app.config import OPENAI_API_KEY, OPENROUTER_API_KEY, CHUNK_SIZE, CHUNK_OVERLAP, TOP_K_CHUNKS
 from app.models import DocumentChunk
 
-client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-
-# Embedding model – small is fast and cheap, 1536 dimensions
-EMBEDDING_MODEL = "text-embedding-3-small"
+# OpenRouter hat Vorrang (gleiches Modell, gleiche 1536 Dimensionen wie direkt bei OpenAI, bereits
+# gespeicherte Vektoren bleiben also kompatibel); sonst direkt OpenAI.
+if OPENROUTER_API_KEY:
+    client = OpenAI(api_key=OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1")
+    EMBEDDING_MODEL = "openai/text-embedding-3-small"
+else:
+    client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+    # Embedding model – small is fast and cheap, 1536 dimensions
+    EMBEDDING_MODEL = "text-embedding-3-small"
 
 # Marker, den documents.py beim PDF-Textextrahieren vor jede Seite einfügt
 # (z.B. "<<<PAGE:3>>>"), damit Chunks später wissen, von welcher Seite sie
