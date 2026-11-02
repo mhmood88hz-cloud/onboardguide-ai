@@ -70,7 +70,11 @@ def build_system_prompt(current_user: User) -> str:
         "am <Datum> Urlaub', 'ist <Person> heute im Haus/krank/im Urlaub', or 'wer "
         "vertritt <Person>' — compare the asked date against the listed ranges instead "
         "of saying the information is unavailable. "
-        "If the answer is not available, say so honestly."
+        "If the answer is not available, say so honestly. "
+        "LANGUAGE RULE: Always reply in the language of the user's latest message "
+        "(e.g. Arabic, Turkish, Ukrainian, English), even when the company documents are "
+        "in German — translate the relevant facts. Keep numbers, times, phone numbers, "
+        "names and German official terms unchanged."
     )
 
 
