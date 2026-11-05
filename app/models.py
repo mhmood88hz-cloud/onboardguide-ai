@@ -200,6 +200,22 @@ class LeaveRequest(Base):
     decider    = relationship("User", foreign_keys=[decided_by])
 
 
+class PasswordResetToken(Base):
+    """Einmal-Token fuer den Self-Service-Passwort-Reset per E-Mail-Link.
+    Gespeichert wird nur der SHA-256-Hash des Tokens (wie ein Passwort-Hash) –
+    der Rohwert steht nie in der DB, nur im (zeitlich begrenzten) Mail-Link."""
+    __tablename__ = "password_reset_tokens"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    user_id    = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token_hash = Column(String(64), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used_at    = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    user = relationship("User")
+
+
 class Invoice(Base):
     """Vom Betreiber beim Freischalten einer Organization automatisch erzeugte Rechnung
     (siehe app/services/invoice_service.py) – kein Stripe, keine automatisierte Zahlung,

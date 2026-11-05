@@ -1,17 +1,29 @@
+import hashlib
 import json
 import re
+import secrets
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session, joinedload
+from app.config import FRONTEND_URL
 from app.database import get_db
-from app.models import User, Organization, OnboardingTemplate, Task
+from app.models import User, Organization, OnboardingTemplate, Task, PasswordResetToken
 from app.schemas import (
     UserCreate, UserResponse, LoginRequest, TokenResponse,
     ChangePasswordRequest, ResetPasswordRequest, SignupRequest,
+    ForgotPasswordRequest, ResetPasswordConfirmRequest,
 )
 from app.security import require_verwaltung, hash_password, verify_password, create_access_token, get_current_user, load_current_user
+from app.services.email_service import send_email
 from app.services.rate_limit import limiter
 from app.services.trace import start_trace, log_step, get_trace
 from app.services.ws_manager import manager
+
+RESET_TOKEN_VALID_MINUTES = 30
+
+
+def _hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -152,6 +164,81 @@ def reset_password(
         "status":  "success",
         "message": f"Passwort von '{user.username}' wurde zurückgesetzt."
     }
+
+
+@router.post("/forgot-password", status_code=200)
+@limiter.limit("5/minute")
+def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Self-Service: Mitarbeiter fordert einen Passwort-Reset-Link per E-Mail an.
+    Gibt immer dieselbe generische Nachricht zurück, unabhängig davon, ob die
+    E-Mail existiert – verhindert, dass Angreifer registrierte Adressen erraten.
+    """
+    generic_response = {
+        "status":  "success",
+        "message": "Falls diese E-Mail-Adresse registriert ist, wurde ein Link zum Zurücksetzen verschickt."
+    }
+
+    user = db.query(User).filter(User.email == body.email).first()
+    if not user:
+        return generic_response
+
+    token = secrets.token_urlsafe(32)
+    db.add(PasswordResetToken(
+        user_id=user.id,
+        token_hash=_hash_reset_token(token),
+        expires_at=datetime.utcnow() + timedelta(minutes=RESET_TOKEN_VALID_MINUTES),
+    ))
+    db.commit()
+
+    reset_link = f"{FRONTEND_URL}/reset-password?token={token}"
+    send_email(
+        to=user.email,
+        subject="OnboardGuide AI – Passwort zurücksetzen",
+        html=(
+            f"<p>Hallo {user.username},</p>"
+            f"<p>du hast einen Passwort-Reset angefordert. Klicke auf den folgenden Link, "
+            f"um ein neues Passwort zu setzen (gültig {RESET_TOKEN_VALID_MINUTES} Minuten):</p>"
+            f'<p><a href="{reset_link}">{reset_link}</a></p>'
+            f"<p>Falls du das nicht warst, kannst du diese E-Mail ignorieren.</p>"
+        ),
+    )
+
+    return generic_response
+
+
+@router.post("/reset-password-confirm", status_code=200)
+@limiter.limit("10/minute")
+def reset_password_confirm(request: Request, body: ResetPasswordConfirmRequest, db: Session = Depends(get_db)):
+    """
+    Self-Service: setzt mit einem gültigen, noch nicht verwendeten Reset-Token
+    (aus forgot_password) ein neues Passwort.
+    """
+    token_hash = _hash_reset_token(body.token)
+    reset_entry = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token_hash == token_hash
+    ).first()
+
+    if (
+        not reset_entry
+        or reset_entry.used_at is not None
+        or reset_entry.expires_at < datetime.utcnow()
+    ):
+        raise HTTPException(status_code=400, detail="Link ungültig oder abgelaufen. Bitte neu anfordern.")
+
+    user = db.query(User).filter(User.id == reset_entry.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden!")
+
+    user.password_hash = hash_password(body.new_password)
+    reset_entry.used_at = datetime.utcnow()
+    db.commit()
+
+    return {
+        "status":  "success",
+        "message": "Passwort erfolgreich zurückgesetzt. Du kannst dich jetzt einloggen."
+    }
+
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register_user(

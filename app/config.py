@@ -34,6 +34,9 @@ GROQ_MODEL   = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL   = os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini")
 
+# Frontend-URL fuer Links in Transaktions-Mails (z.B. Passwort-Reset-Link).
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://onboardguide.leadspeak.de")
+
 # Chat settings
 CHAT_HISTORY_LIMIT = 5
 

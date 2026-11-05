@@ -79,7 +79,7 @@ export default function Login() {
             <input type="checkbox" style={{marginRight:'6px'}} />
             <span style={{color:'#8fa1ae', fontSize:'13px'}}>Remember me</span>
           </label>
-          <span style={s.forgotLink}>Passwort vergessen? Kontaktiere HR.</span>
+          <span style={s.forgotLink} onClick={() => navigate('/forgot-password')}>Passwort vergessen?</span>
         </div>
 
         {/* Error */}

@@ -274,3 +274,10 @@ class ChangePasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     user_id:      int
     new_password: str = Field(..., min_length=6)
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordConfirmRequest(BaseModel):
+    token:        str
+    new_password: str = Field(..., min_length=6)
