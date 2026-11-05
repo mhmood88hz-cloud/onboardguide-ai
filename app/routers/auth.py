@@ -37,8 +37,10 @@ def _slugify(name: str) -> str:
 @limiter.limit("10/minute")
 def login(request: Request, body: LoginRequest, db: Session = Depends(get_db)):
 
-    # Find user by username
-    user = db.query(User).filter(User.username == body.username).first()
+    # Login-Feld akzeptiert Username ODER E-Mail (Frontend beschriftet es entsprechend).
+    user = db.query(User).filter(
+        (User.username == body.username) | (User.email == body.username)
+    ).first()
     if not user:
         raise HTTPException(status_code=401, detail="Benutzername oder Passwort falsch.")
 
